@@ -8,4 +8,4 @@ if someone hasn't already beaten you to it.
 
 [1]: https://developer.android.com/images/brand/en_app_rgb_wo_60.png
 [2]: https://play.google.com/store/apps/details?id=net.sf.diningout
-[3]: /pushbit/dining-out/issues
+[3]: https://github.com/pushbit/dining-out/issues
