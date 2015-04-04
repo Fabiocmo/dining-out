@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:background="@color/cards_window_background"> <!-- overlay detail on scroll -->
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="@dimen/cards_parent_margin"
+        android:layout_marginRight="@dimen/cards_parent_margin"
+        android:background="@drawable/card">
+
+        <Spinner
+            android:id="@+id/ratings"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/icon"
+            android:layout_alignParentRight="true"/>
+
+        <ImageView
+            android:id="@+id/star"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@id/ratings"
+            android:contentDescription="@string/star"
+            android:src="@drawable/ic_action_important_light"/>
+
+        <TextView
+            android:id="@+id/title"
+            style="@style/Card.Title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@id/star"/>
+
+        <EditText
+            android:id="@+id/comments"
+            style="@style/Card.Text.Medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/title"
+            android:layout_marginTop="@dimen/text_margin"
+            android:hint="@string/comments_hint"
+            android:inputType="textCapSentences|textMultiLine|textLongMessage"/>
+
+    </RelativeLayout>
+</FrameLayout>

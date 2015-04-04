@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:background="@drawable/card"
+              android:orientation="vertical">
+
+    <TextView
+        style="@style/Card.Title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/notifications_empty_title"/>
+
+    <TextView
+        android:id="@+id/invite"
+        style="@style/Card.Text.Medium.Link"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/padding_medium"
+        android:background="?android:selectableItemBackground"
+        android:clickable="true"
+        android:drawableLeft="@drawable/ic_action_browse"
+        android:drawablePadding="@dimen/padding_small"
+        android:gravity="center_vertical"
+        android:paddingRight="@dimen/padding"
+        android:text="@string/notifications_empty_text"/>
+
+</LinearLayout>

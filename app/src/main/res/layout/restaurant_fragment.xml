@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <net.sf.sprockets.widget.ObservableImageView
+        android:id="@+id/photo"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/restaurant_photo_height"
+        android:contentDescription="@string/restaurant_photo"/>
+
+    <TextView
+        android:id="@+id/name"
+        style="@style/Cell.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/min_touch_size"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="@dimen/max_action_bar_height_plus_cards_sibling_margin"
+        android:background="?android:selectableItemBackground"
+        android:clickable="true"
+        android:drawablePadding="@dimen/padding"
+        android:drawableRight="@drawable/ic_action_gplus"
+        android:gravity="center_vertical|right"
+        android:maxLines="1"
+        android:maxWidth="@dimen/restaurant_detail_max_width"
+        android:paddingLeft="@dimen/padding"
+        android:paddingRight="@dimen/padding_medium"/>
+
+    <TextView
+        android:id="@+id/address"
+        style="@style/Cell.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/min_touch_size"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/name"
+        android:layout_marginTop="@dimen/cards_sibling_margin"
+        android:background="?android:selectableItemBackground"
+        android:clickable="true"
+        android:drawablePadding="@dimen/padding"
+        android:drawableRight="@drawable/ic_action_place"
+        android:gravity="center_vertical|right"
+        android:maxLines="1"
+        android:maxWidth="@dimen/restaurant_detail_max_width"
+        android:paddingLeft="@dimen/padding"
+        android:paddingRight="@dimen/padding_medium"/>
+
+    <ViewStub
+        android:id="@+id/edit_address_stub"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/min_touch_size"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@id/address"
+        android:layout_marginRight="@dimen/padding_small"
+        android:layout="@layout/restaurant_edit_address"/>
+
+    <TextView
+        android:id="@+id/phone"
+        style="@style/Cell.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/min_touch_size"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/address"
+        android:layout_marginTop="@dimen/cards_sibling_margin"
+        android:background="?android:selectableItemBackground"
+        android:clickable="true"
+        android:drawablePadding="@dimen/padding"
+        android:drawableRight="@drawable/ic_action_call"
+        android:gravity="center_vertical|right"
+        android:maxLines="1"
+        android:maxWidth="@dimen/restaurant_detail_max_width"
+        android:paddingLeft="@dimen/padding"
+        android:paddingRight="@dimen/padding_medium"/>
+
+    <ViewStub
+        android:id="@+id/edit_phone_stub"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/min_touch_size"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@id/phone"
+        android:layout_marginRight="@dimen/padding_small"
+        android:layout="@layout/restaurant_edit_phone"/>
+
+    <Spinner
+        android:id="@+id/hours"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/min_touch_size"
+        android:layout_alignTop="@id/phone"
+        android:layout_toLeftOf="@id/phone"
+        android:background="@drawable/spinner_background_dark"
+        android:alpha="0"/>
+
+    <TextView
+        android:id="@+id/website"
+        style="@style/Cell.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/min_touch_size"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/phone"
+        android:layout_marginTop="@dimen/cards_sibling_margin"
+        android:background="?android:selectableItemBackground"
+        android:clickable="true"
+        android:drawablePadding="@dimen/padding"
+        android:drawableRight="@drawable/ic_action_web_site"
+        android:gravity="center_vertical|right"
+        android:maxLines="1"
+        android:maxWidth="@dimen/restaurant_detail_max_width"
+        android:paddingLeft="@dimen/padding"
+        android:paddingRight="@dimen/padding_medium"/>
+
+    <ViewStub
+        android:id="@+id/edit_website_stub"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/min_touch_size"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@id/website"
+        android:layout_marginRight="@dimen/padding_small"
+        android:layout="@layout/restaurant_edit_website"/>
+
+</RelativeLayout>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="Theme" parent="@android:style/Theme.Holo.Light.DarkActionBar">
+        <item name="android:actionBarStyle">@style/Widget.ActionBar</item>
+        <item name="android:actionModeBackground">@drawable/ab_background</item>
+        <item name="android:windowBackground">@color/cards_window_background</item>
+        <item name="android:selectableItemBackground">@drawable/item_background</item>
+        <item name="android:listChoiceBackgroundIndicator">@drawable/list_selector</item>
+        <item name="android:activatedBackgroundIndicator">@drawable/activated_background</item>
+        <item name="android:editTextBackground">@drawable/edit_text</item>
+        <item name="android:autoCompleteTextViewStyle">@style/Widget.AutoCompleteTextView</item>
+        <item name="android:textColorHighlight">@color/text_highlight</item>
+        <item name="android:textSelectHandle">@drawable/text_select_handle_middle</item>
+        <item name="android:textSelectHandleLeft">@drawable/text_select_handle_left</item>
+        <item name="android:textSelectHandleRight">@drawable/text_select_handle_right</item>
+        <item name="android:buttonStyle">@style/Widget.Button</item>
+        <item name="android:borderlessButtonStyle">@style/Widget.Button.Borderless</item>
+        <item name="dropdownListPreferredItemHeight">?android:listPreferredItemHeightSmall</item>
+        <item name="matchedSubstringColor">@color/highlight</item>
+        <item name="pstsIndicatorColor">@color/highlight</item>
+        <item name="pstsTabBackground">?android:selectableItemBackground</item>
+        <item name="pstsShouldExpand">true</item>
+    </style>
+
+    <style name="Theme.Translucent">
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+
+</resources>

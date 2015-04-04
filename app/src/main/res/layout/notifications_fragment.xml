@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent">
+
+    <GridView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:columnWidth="@dimen/grid_card_width"
+        android:drawSelectorOnTop="true"
+        android:horizontalSpacing="@dimen/cards_sibling_margin"
+        android:numColumns="auto_fit"
+        android:padding="@dimen/cards_parent_margin"
+        android:scrollbarStyle="outsideOverlay"
+        android:verticalSpacing="@dimen/cards_sibling_margin"/>
+
+    <ViewStub
+        android:id="@+id/empty"
+        android:layout_width="@dimen/text_card_max_width"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="@dimen/cards_parent_margin"
+        android:layout="@layout/notifications_empty"/>
+
+</FrameLayout>

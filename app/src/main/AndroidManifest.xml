@@ -1,0 +1,122 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="net.sf.diningout">
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
+
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false"/>
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="false"/>
+
+    <application
+        android:name=".app.AppApplication"
+        android:icon="@drawable/icon"
+        android:label="@string/app_name"
+        android:logo="@drawable/logo"
+        android:theme="@style/Theme"
+        android:allowBackup="true">
+
+        <activity
+            android:name=".app.ui.MainActivity"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".app.ui.InitActivity"
+            android:label="@string/init_title"/>
+        <activity
+            android:name=".app.ui.RestaurantsActivity"
+            android:label="@string/restaurants_title"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/restaurants_searchable"/>
+        </activity>
+        <activity
+            android:name=".app.ui.RestaurantActivity"
+            android:label=""
+            android:parentActivityName=".app.ui.RestaurantsActivity"
+            android:theme="@style/Theme.Translucent"
+            android:windowSoftInputMode="stateHidden"/>
+        <activity
+            android:name=".app.ui.RestaurantAddActivity"
+            android:label="@string/add_restaurant_title"
+            android:parentActivityName=".app.ui.RestaurantsActivity"
+            android:windowSoftInputMode="stateHidden"/>
+        <activity
+            android:name=".app.ui.FriendsActivity"
+            android:label="@string/friends_title"
+            android:parentActivityName=".app.ui.RestaurantsActivity"/>
+        <activity
+            android:name=".app.ui.NotificationsActivity"
+            android:label="@string/notifications_title"
+            android:parentActivityName=".app.ui.RestaurantsActivity"/>
+        <activity
+            android:name=".app.ui.SettingsActivity"
+            android:label="@string/settings">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.NOTIFICATION_PREFERENCES"/>
+            </intent-filter>
+        </activity>
+
+        <service android:name=".app.InitService"/>
+        <service android:name=".app.RestaurantService"/>
+        <service android:name=".app.RestaurantGeocodeService"/>
+        <service android:name=".app.RestaurantColorService"/>
+        <service android:name=".app.RestaurantsPlaceIdService"/>
+        <service android:name=".app.RestaurantsRefreshService"/>
+        <service android:name=".app.ReviewsService"/>
+        <service android:name=".app.FriendColorService"/>
+        <service android:name=".app.SyncsReadService"/>
+        <service android:name=".app.SyncService">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter"/>
+        </service>
+        <service android:name="com.google.android.gms.analytics.CampaignTrackingService"/>
+
+        <receiver
+            android:name=".content.CloudReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
+                <category android:name="net.sf.diningout"/>
+            </intent-filter>
+        </receiver>
+        <receiver android:name="com.google.android.gms.analytics.CampaignTrackingReceiver">
+            <intent-filter>
+                <action android:name="com.android.vending.INSTALL_REFERRER"/>
+            </intent-filter>
+        </receiver>
+
+        <provider
+            android:name=".content.AppContentProvider"
+            android:authorities="net.sf.diningout"
+            android:syncable="true"
+            android:exported="false"/>
+
+        <meta-data
+            android:name="com.google.android.maps.v2.API_KEY"
+            android:value="AIzaSyA12r7lCOCYLBkaTzI-UyCHUn0rhxOfgsE"/>
+
+    </application>
+</manifest>

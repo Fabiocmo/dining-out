@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <include layout="@layout/navigation_drawer"/>
+
+    <fragment
+        android:id="@+id/autocomplete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/navigationDrawer"
+        android:layout_marginLeft="@dimen/cards_pane_margin"
+        android:layout_marginRight="@dimen/cards_pane_margin"
+        android:layout_marginTop="@dimen/cards_parent_margin"
+        class="net.sf.diningout.app.ui.RestaurantAutocompleteFragment"/>
+
+    <fragment
+        android:id="@+id/nearby"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@id/navigationDrawer"
+        android:layout_below="@id/autocomplete"
+        android:layout_marginLeft="@dimen/padding"
+        android:layout_marginRight="@dimen/padding"
+        class="net.sf.diningout.app.ui.RestaurantsNearbyFragment"/>
+
+</RelativeLayout>

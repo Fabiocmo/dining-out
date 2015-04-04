@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="ga_autoActivityTracking">true</bool>
+    <bool name="ga_reportUncaughtExceptions">true</bool>
+    <screenName name="net.sf.diningout.app.ui.MainActivity">Main</screenName>
+    <screenName name="net.sf.diningout.app.ui.InitActivity">Init</screenName>
+    <screenName name="net.sf.diningout.app.ui.RestaurantsActivity">Restaurants</screenName>
+    <screenName name="net.sf.diningout.app.ui.RestaurantActivity">Restaurant</screenName>
+    <screenName name="net.sf.diningout.app.ui.RestaurantAddActivity">RestaurantAdd</screenName>
+    <screenName name="net.sf.diningout.app.ui.FriendsActivity">Friends</screenName>
+    <screenName name="net.sf.diningout.app.ui.NotificationsActivity">Notifications</screenName>
+    <screenName name="net.sf.diningout.app.ui.SettingsActivity">Settings</screenName>
+</resources>

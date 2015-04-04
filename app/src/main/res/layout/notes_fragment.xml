@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:background="@color/cards_window_background"> <!-- overlay detail on scroll -->
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="@dimen/cards_parent_margin"
+        android:layout_marginRight="@dimen/cards_parent_margin"
+        android:layout_marginBottom="@dimen/cards_parent_margin"
+        android:background="@drawable/card"> <!-- bottom margin covers detail behind it -->
+
+        <EditText
+            android:id="@+id/notes"
+            style="@style/Card.Text.Medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/notes_hint"
+            android:inputType="textCapSentences|textMultiLine|textLongMessage"/>
+
+    </FrameLayout>
+</FrameLayout>

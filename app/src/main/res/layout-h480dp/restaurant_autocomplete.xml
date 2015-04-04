@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:sprockets="http://schemas.android.com/apk/res-auto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/card">
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/Card.Title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/autocomplete_title"/>
+
+    <ImageButton
+        android:id="@+id/search"
+        style="?android:borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/title"
+        android:contentDescription="@string/search"
+        android:src="@drawable/ic_action_search_light"/>
+
+    <net.sf.sprockets.widget.GooglePlaceAutoComplete
+        android:id="@+id/name"
+        style="@style/Card.Text.Medium"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/search"
+        android:layout_toLeftOf="@id/search"
+        android:hint="@string/autocomplete_hint"
+        android:imeOptions="actionSearch"
+        android:inputType="textCapWords|textMultiLine"
+        android:minHeight="@dimen/min_touch_size"
+        sprockets:radius="@integer/search_radius"
+        sprockets:types="@string/autocomplete_types"/>
+
+</RelativeLayout>

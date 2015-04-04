@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical">
+
+    <fragment
+        android:id="@+id/autocomplete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/cards_parent_margin"
+        android:layout_marginRight="@dimen/cards_parent_margin"
+        android:layout_marginTop="@dimen/cards_parent_margin"
+        class="net.sf.diningout.app.ui.RestaurantAutocompleteFragment"/>
+
+    <fragment
+        android:id="@+id/nearby"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        class="net.sf.diningout.app.ui.RestaurantsNearbyFragment"/>
+
+</LinearLayout>

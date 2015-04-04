@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <entry key="update_restaurant_rating">
+        UPDATE restaurant
+        SET rating = (SELECT avg(rating) FROM review WHERE restaurant_id = ? AND status_id = 1)
+        WHERE _id = ?
+    </entry>
+
+    <entry key="update_restaurant_last_visit">
+        UPDATE restaurant
+        SET last_visit_on = (SELECT max(written_on) FROM review WHERE restaurant_id = ?
+        AND type_id = 1 AND contact_id IS NULL AND status_id = 1)
+        WHERE _id = ?
+    </entry>
+</properties>

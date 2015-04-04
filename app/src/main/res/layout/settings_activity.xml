@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                        xmlns:sprockets="http://schemas.android.com/apk/res-auto"
+                                        android:id="@+id/root"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent">
+
+    <fragment
+        android:id="@+id/settings"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        class="net.sf.diningout.app.ui.SettingsActivity$SettingsFragment"
+        sprockets:preferences="@xml/preferences"/>
+
+    <include layout="@layout/navigation_drawer"/>
+
+</android.support.v4.widget.DrawerLayout>

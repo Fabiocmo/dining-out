@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginLeft="@dimen/cards_parent_margin"
+              android:layout_marginRight="@dimen/cards_parent_margin"
+              android:background="@drawable/card"
+              android:gravity="center_vertical">
+
+    <TextView
+        style="@style/Card.Title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/init_restaurants_header_title"/>
+
+    <TextView
+        style="@style/Card.Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/card_padding"
+        android:text="@string/init_restaurants_header_text"/>
+
+</LinearLayout>

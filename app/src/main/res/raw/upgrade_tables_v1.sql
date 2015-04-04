@@ -1,0 +1,2 @@
+ALTER TABLE contact ADD COLUMN color INTEGER;
+ALTER TABLE restaurant ADD COLUMN color INTEGER;

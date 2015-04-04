@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/cards_window_background"> <!-- window is transparent -->
+
+    <fragment
+        android:id="@+id/detail"
+        android:layout_width="@dimen/pane_max_width"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        class="net.sf.diningout.app.ui.RestaurantFragment"/>
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/pager"
+        android:layout_width="@dimen/pane_max_width"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"/>
+
+    <com.astuetz.PagerSlidingTabStrip
+        android:id="@+id/tabs"
+        android:layout_width="@dimen/pane_max_width"
+        android:layout_height="?android:actionBarSize"
+        android:layout_alignParentRight="true"
+        android:background="@color/tabs_background"
+        android:translationY="@dimen/restaurant_photo_height"/>
+
+    <fragment
+        android:id="@+id/restaurants"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toLeftOf="@id/detail"
+        android:layout_marginLeft="@dimen/padding"
+        android:layout_marginRight="@dimen/padding"
+        class="net.sf.diningout.app.ui.RestaurantsFragment"/>
+
+</RelativeLayout>

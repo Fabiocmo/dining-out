@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridView xmlns:android="http://schemas.android.com/apk/res/android"
+          android:id="@+id/list"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:choiceMode="multipleChoiceModal"
+          android:clipToPadding="false"
+          android:columnWidth="@dimen/grid_card_width"
+          android:drawSelectorOnTop="true"
+          android:horizontalSpacing="@dimen/cards_sibling_margin"
+          android:numColumns="auto_fit"
+          android:padding="@dimen/cards_parent_margin"
+          android:scrollbarStyle="outsideOverlay"
+          android:verticalSpacing="@dimen/cards_sibling_margin"/>

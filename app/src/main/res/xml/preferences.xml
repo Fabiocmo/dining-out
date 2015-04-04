@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        android:key="account_name"
+        android:title="@string/account"/>
+
+    <MultiSelectListPreference
+        android:key="show_notifications"
+        android:title="@string/notifications"
+        android:entries="@array/notification_types"
+        android:entryValues="@array/notification_type_values"
+        android:defaultValue="@array/notification_type_values"/>
+
+    <RingtonePreference
+        android:key="ringtone"
+        android:title="@string/ringtone"
+        android:ringtoneType="notification"
+        android:defaultValue="content://settings/system/notification_sound"/>
+
+    <CheckBoxPreference
+        android:key="vibrate"
+        android:title="@string/vibrate"
+        android:defaultValue="false"/>
+
+    <ListPreference
+        android:key="distance_unit"
+        android:title="@string/distance_units"
+        android:summary="%s"
+        android:entries="@array/distance_units_entries"
+        android:defaultValue=""/>
+
+    <CheckBoxPreference
+        android:key="allow_analytics"
+        android:title="@string/allow_analytics"
+        android:summaryOn="@string/allow_analytics_on"
+        android:summaryOff="@string/allow_analytics_off"
+        android:defaultValue="true"/>
+
+</PreferenceScreen>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:background="@color/cards_window_background"> <!-- overlay detail on scroll -->
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="@dimen/cards_parent_margin"
+        android:layout_marginRight="@dimen/cards_parent_margin"
+        android:background="@drawable/card">
+
+        <ImageView
+            android:id="@+id/photo"
+            android:layout_width="@dimen/review_photo"
+            android:layout_height="@dimen/review_photo"
+            android:layout_marginRight="@dimen/padding"
+            android:contentDescription="@string/friend_photo"/>
+
+        <TextView
+            android:id="@+id/rating"
+            style="@style/Card.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/name"
+            android:layout_alignParentRight="true"
+            android:drawableLeft="@drawable/ic_action_important_light_small"/>
+
+        <TextView
+            android:id="@+id/time"
+            style="@style/Card.Text.Light"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/name"
+            android:layout_marginLeft="@dimen/padding_large"
+            android:layout_marginRight="@dimen/padding_large"
+            android:layout_toLeftOf="@id/rating"/>
+
+        <TextView
+            android:id="@+id/name"
+            style="@style/Card.Title.Medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@id/time"
+            android:layout_toRightOf="@id/photo"
+            android:maxLines="1"/>
+
+        <TextView
+            android:id="@+id/comments"
+            style="@style/Card.Text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/name"
+            android:layout_marginTop="@dimen/padding"/>
+
+    </RelativeLayout>
+</FrameLayout>

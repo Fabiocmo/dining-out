@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:background="@color/cards_window_background"> <!-- window is transparent -->
+
+    <fragment
+        android:id="@+id/detail"
+        android:layout_width="@dimen/pane_max_width"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_horizontal"
+        class="net.sf.diningout.app.ui.RestaurantFragment"/>
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/pager"
+        android:layout_width="@dimen/pane_max_width"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_horizontal"/>
+
+    <com.astuetz.PagerSlidingTabStrip
+        android:id="@+id/tabs"
+        android:layout_width="@dimen/pane_max_width"
+        android:layout_height="?android:actionBarSize"
+        android:layout_gravity="center_horizontal"
+        android:background="@color/tabs_background"
+        android:translationY="@dimen/restaurant_photo_height"/>
+
+</FrameLayout>

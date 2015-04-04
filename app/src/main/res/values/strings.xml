@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dining Out</string>
+
+    <!-- init -->
+    <string name="init_title">Getting Started</string>
+    <string name="s_selected">%s selected</string>
+    <string name="s_s_selected">%1$s, %2$s selected</string>
+    <plurals name="n_restaurants">
+        <item quantity="one">1 restaurant</item>
+        <item quantity="other">%d restaurants</item>
+    </plurals>
+    <plurals name="n_friends">
+        <item quantity="one">1 friend</item>
+        <item quantity="other">%d friends</item>
+    </plurals>
+    <string name="init_restaurants_header_title">Add restaurants</string>
+    <string name="init_restaurants_header_text">Choose any of these local restaurants to start off your list.</string>
+    <string name="init_friends_header_title">Add friends</string>
+    <string name="init_friends_header_text">Follow friends who are also <i>Dining Out</i> and invite others to join.</string>
+
+    <!-- navigation drawer -->
+    <string-array name="navigation_drawer_items">
+        <item>@string/restaurants_title</item>
+        <item>@string/friends_title</item>
+        <item>@string/notifications_title</item>
+    </string-array>
+    <string name="feedback_destination">pushbit@gmail.com</string>
+    <string name="feedback_subject">Dining Out feedback</string>
+
+    <!-- restaurants -->
+    <string name="restaurants_title">Restaurants</string>
+    <string name="by_name">by name</string>
+    <string name="by_last_visit">by last visit</string>
+    <string name="by_distance">by distance</string>
+    <string name="on_a_map">on a map</string>
+    <string name="by_rating">by rating</string>
+    <string-array name="restaurants_sort">
+        <item>@string/by_name</item>
+        <item>@string/by_last_visit</item>
+        <item>@string/by_distance</item>
+        <item>@string/on_a_map</item>
+        <item>@string/by_rating</item>
+    </string-array>
+    <string name="restaurants_searchable_hint">Search restaurants</string>
+    <string name="restaurants_share">Restaurants</string>
+    <string name="restaurant_photo">Restaurant photo</string>
+    <string name="rating_km">"★%1$.1f  ◉%2$.1f km"</string>
+    <string name="rating_mi">"★%1$.1f  ◉%2$.1f mi"</string>
+    <string name="km">◉%.1f km</string>
+    <string name="mi">◉%.1f mi</string>
+
+    <!-- restaurant -->
+    <string name="open">(Open)</string>
+    <string name="closed">(Closed)</string>
+    <string name="add_address">Add street address</string>
+    <string name="add_phone">Add phone number</string>
+    <string name="add_website">Add website</string>
+    <string name="tab_private">Private</string>
+    <string name="tab_public">Public</string>
+    <string name="tab_notes">Notes</string>
+    <string name="notes_hint">Don’t forget…</string>
+
+    <!-- reviews -->
+    <string name="add_review">Add review</string>
+    <string name="add_review_title">Add review</string>
+    <string name="edit_review_title">Edit review</string>
+    <string name="comments_hint">How was it?</string>
+    <string name="star">Star</string>
+    <string-array name="ratings">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+    <string name="add_empty_review">Add empty review?</string>
+    <string name="me">Me</string>
+    <string name="recent_time">just now</string>
+    <string name="reviews_public_empty_title">None yet</string>
+    <string name="reviews_public_empty_text">Search the web for reviews</string>
+    <string name="reviews_public_search">%s review</string>
+    <plurals name="reviews_share">
+        <item quantity="one">Review of %s</item>
+        <item quantity="other">Reviews of %s</item>
+    </plurals>
+    <string name="review_metadata">%1$s (%2$s) ★%3$d</string>
+
+    <!-- add restaurant -->
+    <string name="add_restaurant_title">Add Restaurant</string>
+    <string name="add_s">Add %s</string>
+    <string name="autocomplete_title">Autocomplete</string>
+    <string name="autocomplete_hint">Start typing the name…</string>
+    <string name="nearby_title">Nearby</string>
+    <string name="search_results_title">Search results</string>
+    <string name="search_results_empty">&lt;b>%s&lt;/b> didn’t match any restaurants.</string>
+
+    <!-- friends -->
+    <string name="friends_title">Friends</string>
+    <string name="friend_photo">Friend photo</string>
+    <string name="follow">Follow</string>
+    <string name="following">Following</string>
+    <string name="invite">Invite</string>
+    <string name="inviting">Inviting</string>
+    <string name="non_contact">[Not in contacts]</string>
+    <string name="invite_subject">Dining Out for Android</string>
+    <string name="invite_body">Join me in Dining Out for Android and we can share our restaurant reviews and recommendations together.\n\nGet it on Google Play!\nhttps://play.google.com/store/apps/details?id=net.sf.diningout\n</string>
+
+    <!-- notifications -->
+    <string name="notifications_title">Notifications</string>
+    <string name="notification_photo">Notification photo</string>
+    <string name="notifications_empty_title">None yet</string>
+    <string name="notifications_empty_text">Invite friends</string>
+
+    <!-- settings -->
+    <string name="account">Account</string>
+    <string name="notifications">Notifications</string>
+    <string name="friend_notifications">"Friends' reviews"</string>
+    <string name="public_notifications">Public reviews</string>
+    <string-array name="notification_types">
+        <item>@string/friend_notifications</item>
+        <item>@string/public_notifications</item>
+    </string-array>
+    <string name="friend_notifications_value">friends</string>
+    <string name="public_notifications_value">public</string>
+    <string-array name="notification_type_values">
+        <item>@string/friend_notifications_value</item>
+        <item>@string/public_notifications_value</item>
+    </string-array>
+    <string name="ringtone">Ringtone</string>
+    <string name="vibrate">Vibrate</string>
+    <string name="distance_units">Distance units</string>
+    <string name="automatic">Automatic</string>
+    <string name="kilometres">Kilometres</string>
+    <string name="miles">Miles</string>
+    <string-array name="distance_units_entries">
+        <item>@string/automatic</item>
+        <item>@string/kilometres</item>
+        <item>@string/miles</item>
+    </string-array>
+    <string name="allow_analytics">Help improve Dining Out</string>
+    <string name="allow_analytics_on">Send anonymous usage statistics</string>
+    <string name="allow_analytics_off">Don’t send anonymous usage statistics</string>
+
+    <!-- notifications (system) -->
+    <string name="new_friend">%s is Dining Out</string>
+    <string name="new_friend_review">%1$s at %2$s</string>
+    <string name="new_public_review">Public review of %s</string>
+    <string name="sync_item">• %s\n</string>
+    <string name="n_stars">★%d</string>
+
+    <!-- config -->
+    <string name="autocomplete_types">establishment</string>
+</resources>
