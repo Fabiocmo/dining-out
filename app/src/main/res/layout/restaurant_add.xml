@@ -8,9 +8,6 @@
         android:id="@+id/autocomplete"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/cards_parent_margin"
-        android:layout_marginRight="@dimen/cards_parent_margin"
-        android:layout_marginTop="@dimen/cards_parent_margin"
         class="net.sf.diningout.app.ui.RestaurantAutocompleteFragment"/>
 
     <fragment

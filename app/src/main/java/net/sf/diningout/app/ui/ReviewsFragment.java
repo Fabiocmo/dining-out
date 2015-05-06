@@ -1,16 +1,16 @@
 /*
  * Copyright 2014-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -102,34 +102,41 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
 
     @Icicle
     long mRestaurantId;
+
     @Icicle
     int mTypeId;
+
     /**
      * True if a review is being added or edited.
      */
     @Icicle
     boolean mEditing;
+
     /**
      * Review being edited or 0.
      */
     @Icicle
     long mReviewId;
+
     @Icicle
     int mRatingPos = -1;
+
     @Icicle
     CharSequence mComments;
+
     @Icicle
     long mDraftVersion = -1L;
     private ActionMode mActionMode;
     private final Intent mShare = new Intent(ACTION_SEND).setType("text/plain");
 
     /**
-     * Display the type of reviews for the restaurant.
+     * Display the type of reviews for the restaurant and, optionally, prompt to add a new review.
      */
-    static ReviewsFragment newInstance(long restaurantId, Type type) {
+    static ReviewsFragment newInstance(long restaurantId, Type type, boolean addReview) {
         ReviewsFragment frag = new ReviewsFragment();
         frag.mRestaurantId = restaurantId;
         frag.mTypeId = type.id;
+        frag.mEditing = addReview;
         return frag;
     }
 
@@ -150,14 +157,7 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
         list.setMultiChoiceModeListener(new ChoiceListener());
         setListAdapter(new ReviewAdapter(a));
         if (mEditing) {
-            list.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (isResumed()) {
-                        editReview(TextUtils.getTrimmedLength(mComments) > 0);
-                    }
-                }
-            }, 500L); // wait for list to settle so scroll, focus, and showing input method may work
+            editReview(false);
         }
     }
 
@@ -183,17 +183,18 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
                 switch (Type.get(mTypeId)) {
                     case PRIVATE:
                         uri = ReviewsJoinContacts.CONTENT_URI;
-                        proj = new String[]{ReviewsJoinContacts.REVIEW__ID, Reviews.CONTACT_ID,
-                                Contacts.ANDROID_LOOKUP_KEY, Contacts.ANDROID_ID, Contacts.NAME,
-                                Contacts.COLOR, Reviews.COMMENTS, Reviews.RATING,
-                                millis(Reviews.WRITTEN_ON)};
+                        proj = new String[]{ReviewsJoinContacts.REVIEW__ID, Reviews.TYPE_ID,
+                                Reviews.CONTACT_ID, Contacts.ANDROID_LOOKUP_KEY,
+                                Contacts.ANDROID_ID, Contacts.NAME, Contacts.COLOR,
+                                Reviews.COMMENTS, Reviews.RATING, millis(Reviews.WRITTEN_ON)};
                         sel = Reviews.RESTAURANT_ID + " = ? AND " + Reviews.TYPE_ID + " = ? AND "
                                 + ReviewsJoinContacts.REVIEW_STATUS_ID + " = ?";
                         break;
                     case GOOGLE:
                         uri = Reviews.CONTENT_URI;
-                        proj = new String[]{_ID, Reviews.AUTHOR_NAME, Reviews.COMMENTS,
-                                Reviews.RATING, millis(Reviews.WRITTEN_ON)};
+                        proj = new String[]{_ID, Reviews.TYPE_ID, Reviews.CONTACT_ID,
+                                Reviews.AUTHOR_NAME, Reviews.COMMENTS, Reviews.RATING,
+                                millis(Reviews.WRITTEN_ON)};
                         sel = Reviews.RESTAURANT_ID + " = ? AND " + Reviews.TYPE_ID + " = ? AND "
                                 + Reviews.STATUS_ID + " = ?";
                         break;

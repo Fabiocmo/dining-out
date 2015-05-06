@@ -1,16 +1,16 @@
 /*
- * Copyright 2014 pushbit <pushbit@gmail.com>
- * 
+ * Copyright 2014-2015 pushbit <pushbit@gmail.com>
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -30,12 +30,14 @@ public class Sync<T extends Synced> {
      * ID on the server.
      */
     public long globalId;
+
     /**
      * Global value for user that performed this action or 0 for own or system actions.
      */
     public long userId;
     public T object;
     public Action action;
+
     /**
      * UTC datetime in ISO format.
      */

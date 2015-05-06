@@ -1,16 +1,16 @@
 /*
  * Copyright 2013-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -66,7 +66,6 @@ import net.sf.sprockets.database.ReadCursor;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.util.SparseArrays;
 import net.sf.sprockets.view.ViewHolder;
-import net.sf.sprockets.widget.GridCard;
 import net.sf.sprockets.widget.ResourceReadCursorAdapter;
 
 import org.apache.commons.collections.primitives.ArrayLongList;
@@ -105,10 +104,13 @@ public class FriendsFragment extends SprocketsFragment implements LoaderCallback
      */
     @Icicle
     boolean mInit;
+
     @InjectView(R.id.header)
     ViewStub mHeader;
+
     @InjectView(R.id.progress)
     View mProgress;
+
     @InjectView(R.id.list)
     GridView mGrid;
     private Listener mListener;
@@ -149,9 +151,8 @@ public class FriendsFragment extends SprocketsFragment implements LoaderCallback
         super.onViewCreated(view, savedInstanceState);
         if (mInit) {
             mHeader.inflate();
-        } else { // no header, list needs parent margins
-            int margin = res().getDimensionPixelOffset(R.dimen.cards_parent_margin);
-            mGrid.setPadding(margin, margin, margin, margin);
+        } else {
+            mGrid.setPadding(0, 0, 0, 0); // remove padding for header
         }
         mGrid.setAdapter(new FriendsAdapter());
         mGrid.setOnItemClickListener(this);
@@ -424,13 +425,11 @@ public class FriendsFragment extends SprocketsFragment implements LoaderCallback
      * Translates contact rows to Views.
      */
     private class FriendsAdapter extends ResourceReadCursorAdapter {
-        /**
-         * Contact photo is resized according to these measurements.
-         */
-        private final GridCard mCard = new GridCard(mGrid);
+        private final int mCellHeight;
 
         private FriendsAdapter() {
             super(a, R.layout.friends_adapter, null, 0);
+            mCellHeight = res().getDimensionPixelSize(R.dimen.grid_row_height);
         }
 
         @Override
@@ -442,8 +441,8 @@ public class FriendsFragment extends SprocketsFragment implements LoaderCallback
             Uri uri = key != null && id > 0 ? ContactsContract.Contacts.getLookupUri(id, key)
                     : null;
             final String name = c.getString(Contacts.NAME);
-            Picasso.with(context).load(uri).resize(mCard.getWidth(), mCard.getHeight())
-                    .centerCrop().transform(TL).placeholder(Placeholders.rect(c))
+            Picasso.with(context).load(uri).resize(mGrid.getColumnWidth(), mCellHeight).centerCrop()
+                    .transform(TL).placeholder(Placeholders.rect(c))
                     .into(friend.mPhoto, new EmptyCallback() {
                         @Override
                         public void onError() {
@@ -465,8 +464,10 @@ public class FriendsFragment extends SprocketsFragment implements LoaderCallback
     public static class FriendHolder extends ViewHolder {
         @InjectView(R.id.photo)
         ImageView mPhoto;
+
         @InjectView(R.id.name)
         TextView mName;
+
         @InjectView(R.id.action)
         TextView mAction;
 
@@ -484,7 +485,7 @@ public class FriendsFragment extends SprocketsFragment implements LoaderCallback
         @Override
         public void onReceive(Context context, Intent intent) {
             if (mProgress != null) {
-                if (intent.getAction() == ACTION_CONTACTS_SYNCING) { // show progress bar
+                if (ACTION_CONTACTS_SYNCING.equals(intent.getAction())) { // show progress bar
                     mProgress.setVisibility(VISIBLE);
                     mProgress.animate().alpha(1.0f);
                 } else { // hide progress bar

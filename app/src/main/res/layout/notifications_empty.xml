@@ -17,12 +17,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/padding_medium"
-        android:background="?android:selectableItemBackground"
-        android:clickable="true"
+        android:gravity="center_vertical"
         android:drawableLeft="@drawable/ic_action_browse"
         android:drawablePadding="@dimen/padding_small"
-        android:gravity="center_vertical"
+        android:text="@string/notifications_empty_text"
         android:paddingRight="@dimen/padding"
-        android:text="@string/notifications_empty_text"/>
+        android:clickable="true"
+        android:background="?android:selectableItemBackground"/>
 
 </LinearLayout>

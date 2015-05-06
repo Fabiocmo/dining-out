@@ -1,30 +1,33 @@
 /*
  * Copyright 2014-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
 
 package net.sf.diningout.app;
 
+import android.app.Notification;
 import android.app.Notification.BigTextStyle;
 import android.app.Notification.Builder;
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.provider.ContactsContract;
@@ -39,15 +42,20 @@ import net.sf.diningout.app.ui.FriendsActivity;
 import net.sf.diningout.app.ui.NotificationsActivity;
 import net.sf.diningout.app.ui.RestaurantActivity;
 import net.sf.diningout.data.Review;
+import net.sf.diningout.data.Review.Type;
 import net.sf.diningout.data.Sync;
 import net.sf.diningout.provider.Contract.Contacts;
 import net.sf.diningout.provider.Contract.RestaurantPhotos;
+import net.sf.diningout.provider.Contract.Restaurants;
 import net.sf.diningout.provider.Contract.Reviews;
 import net.sf.diningout.provider.Contract.ReviewsJoinAll;
+import net.sf.diningout.provider.Contract.ReviewsJoinContacts;
 import net.sf.diningout.provider.Contract.Syncs;
 import net.sf.diningout.widget.ReviewAdapter;
+import net.sf.sprockets.app.ContentService;
 import net.sf.sprockets.content.Managers;
 import net.sf.sprockets.database.EasyCursor;
+import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.preference.Prefs;
 import net.sf.sprockets.util.StringArrays;
 
@@ -57,17 +65,32 @@ import java.util.Set;
 
 import static android.app.Notification.DEFAULT_LIGHTS;
 import static android.app.Notification.DEFAULT_VIBRATE;
+import static android.app.Notification.PRIORITY_LOW;
 import static android.app.PendingIntent.FLAG_CANCEL_CURRENT;
+import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+import static android.content.Intent.ACTION_EDIT;
+import static android.content.Intent.ACTION_INSERT;
+import static android.content.Intent.ACTION_VIEW;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.net.Uri.EMPTY;
+import static com.google.android.gms.location.Geofence.GEOFENCE_TRANSITION_DWELL;
+import static com.google.android.gms.location.Geofence.GEOFENCE_TRANSITION_ENTER;
+import static com.google.android.gms.location.Geofence.GEOFENCE_TRANSITION_EXIT;
+import static net.sf.diningout.app.RequestCodes.UPDATE_GEOFENCE_NOTIFICATIONS;
 import static net.sf.diningout.app.SyncsReadService.EXTRA_ACTIVITIES;
 import static net.sf.diningout.app.ui.RestaurantActivity.EXTRA_ID;
 import static net.sf.diningout.app.ui.RestaurantActivity.EXTRA_TAB;
+import static net.sf.diningout.app.ui.RestaurantActivity.TAB_NOTES;
+import static net.sf.diningout.app.ui.RestaurantActivity.TAB_PRIVATE;
 import static net.sf.diningout.app.ui.RestaurantActivity.TAB_PUBLIC;
 import static net.sf.diningout.data.Review.Type.GOOGLE;
+import static net.sf.diningout.data.Review.Type.PRIVATE;
 import static net.sf.diningout.data.Status.ACTIVE;
 import static net.sf.diningout.preference.Keys.RINGTONE;
 import static net.sf.diningout.preference.Keys.VIBRATE;
+import static net.sf.sprockets.app.ContentService.EXTRA_NOTIFICATION_ID;
+import static net.sf.sprockets.app.ContentService.EXTRA_NOTIFICATION_TAG;
+import static net.sf.sprockets.app.ContentService.EXTRA_VALUES;
 import static net.sf.sprockets.app.SprocketsApplication.cr;
 import static net.sf.sprockets.gms.analytics.Trackers.event;
 import static net.sf.sprockets.sql.SQLite.alias;
@@ -80,7 +103,8 @@ import static net.sf.sprockets.sql.SQLite.millis;
  */
 public class Notifications {
     private static final String TAG = Notifications.class.getSimpleName();
-    private static final int ID_SYNC = 0;
+    private static final String TAG_SYNC = "sync";
+    private static final String TAG_GEOFENCE = "geofence";
 
     private Notifications() {
     }
@@ -128,19 +152,12 @@ public class Notifications {
                     when = c.getLong(Syncs.ACTION_ON);
                 }
                 if (photo != null && photo != EMPTY) {
-                    try {
-                        icon = Picasso.with(context).load(photo).resizeDimen(
-                                android.R.dimen.notification_large_icon_width,
-                                android.R.dimen.notification_large_icon_height).centerCrop().get();
-                    } catch (IOException e) { // contact or own restaurant may not have photo
-                        Log.w(TAG, "loading contact or restaurant photo", e);
-                    }
+                    icon = photo(context, photo);
                 }
             }
             if (!lines.isEmpty()) { // have something to notify about
                 CharSequence bigText = null;
                 CharSequence summary = null;
-                int items = users + reviews;
                 Intent activity;
                 if (users > 0 && reviews == 0) {
                     activity = new Intent(context, FriendsActivity.class);
@@ -155,10 +172,10 @@ public class Notifications {
                 } else {
                     activity = new Intent(context, NotificationsActivity.class);
                 }
-                bigText(context, ID_SYNC, lines, bigText, summary, when, icon, items, activity);
-                event("notification", "notify", "items", items);
+                notify(context, lines, bigText, summary, when, icon, users + reviews, activity);
+                event("notification", "notify", "sync", users + reviews);
             } else { // sync object was deleted
-                Managers.notification(context).cancel(ID_SYNC);
+                Managers.notification(context).cancel(TAG_SYNC, 0);
                 context.startService(new Intent(context, SyncsReadService.class));
             }
         }
@@ -236,15 +253,9 @@ public class Notifications {
         return Pair.create(photo, review);
     }
 
-    /**
-     * Show a {@link BigTextStyle} notification that starts the Activity.
-     *
-     * @param id     one of the ID_* constants in this class
-     * @param number total number of items, may be more than number of lines
-     */
-    private static void bigText(Context context, int id, Set<CharSequence> lines,
-                                CharSequence bigText, CharSequence summary, long when, Bitmap icon,
-                                int number, Intent activity) {
+    private static void notify(Context context, Set<CharSequence> lines, CharSequence bigText,
+                               CharSequence summary, long when, Bitmap icon, int totalItems,
+                               Intent activity) {
         int defaults = DEFAULT_LIGHTS;
         if (Prefs.getBoolean(context, VIBRATE)) {
             defaults |= DEFAULT_VIBRATE;
@@ -268,29 +279,165 @@ public class Notifications {
         }
         TaskStackBuilder task = TaskStackBuilder.create(context)
                 .addNextIntentWithParentStack(activity.addFlags(FLAG_ACTIVITY_NEW_TASK));
-        PendingIntent content;
-        if (id == ID_SYNC) { // remove after Android issue 41253 is fixed
-            Intent read = new Intent(context, SyncsReadService.class)
-                    .putExtra(EXTRA_ACTIVITIES, task.getIntents());
-            content = PendingIntent.getService(context, 1, read, FLAG_CANCEL_CURRENT);
-        } else {
-            content = task.getPendingIntent(0, FLAG_CANCEL_CURRENT); // flag for Android issue 61850
-        }
+        /* don't use SyncsReadService when Android issue 41253 is fixed, flag for issue 61850 */
+        PendingIntent content = PendingIntent.getService(context, 0,
+                new Intent(context, SyncsReadService.class)
+                        .putExtra(EXTRA_ACTIVITIES, task.getIntents()), FLAG_CANCEL_CURRENT);
+        PendingIntent delete = PendingIntent.getService(context, 1,
+                new Intent(context, SyncsReadService.class), FLAG_CANCEL_CURRENT);
         Builder notif = new Builder(context).setDefaults(defaults).setOnlyAlertOnce(true)
                 .setTicker(title).setContentTitle(title).setStyle(style).setWhen(when)
                 .setLargeIcon(icon).setSmallIcon(R.drawable.stat_logo).setContentIntent(content)
-                .setAutoCancel(true);
+                .setAutoCancel(true).setDeleteIntent(delete);
         String ringtone = Prefs.getString(context, RINGTONE);
         if (!TextUtils.isEmpty(ringtone)) {
             notif.setSound(Uri.parse(ringtone));
         }
-        if (number > 1) {
-            notif.setNumber(number);
+        if (totalItems > 1) {
+            notif.setNumber(totalItems);
         }
-        if (id == ID_SYNC) {
-            Intent read = new Intent(context, SyncsReadService.class);
-            notif.setDeleteIntent(PendingIntent.getService(context, 0, read, FLAG_CANCEL_CURRENT));
+        Managers.notification(context).notify(TAG_SYNC, 0, notif.build());
+    }
+
+    /**
+     * Post a notification when entering the restaurant, update the restaurant when dwelling at it,
+     * and cancel the notification when exiting the restaurant.
+     */
+    public static void geofence(Context context, int transition, long restaurantId) {
+        switch (transition) {
+            case GEOFENCE_TRANSITION_ENTER:
+                EasyCursor restaurant = restaurant(restaurantId);
+                if (restaurant.moveToFirst()) {
+                    String name = restaurant.getString(Restaurants.NAME);
+                    BigTextStyle style = new BigTextStyle();
+                    Review.Type reviewType = null;
+                    EasyCursor review = review(restaurantId);
+                    if (review.moveToFirst()) {
+                        style.bigText(context.getString(R.string.review_metadata,
+                                ReviewAdapter.name(context, review),
+                                ReviewAdapter.time(context, review), review.getInt(Reviews.RATING))
+                                + "\n" + ReviewAdapter.comments(review));
+                        reviewType = Type.get(review.getInt(Reviews.TYPE_ID));
+                    } else {
+                        style.bigText(restaurant.getString(Restaurants.NOTES));
+                    }
+                    review.close();
+                    Bitmap icon = photo(context, RestaurantPhotos.uriForRestaurant(restaurantId));
+                    Notification notif = new Builder(context).setOnlyAlertOnce(true).setTicker(name)
+                            .setContentTitle(name).setStyle(style).setLargeIcon(icon)
+                            .setSmallIcon(R.drawable.stat_logo).setPriority(PRIORITY_LOW)
+                            .setContentIntent(view(context, restaurantId, false, reviewType))
+                            .addAction(R.drawable.ic_action_location_off,
+                                    context.getString(R.string.ignore_restaurant),
+                                    ignore(context, restaurantId)).build();
+                    Managers.notification(context).notify(TAG_GEOFENCE, (int) restaurantId, notif);
+                    event("restaurant", "enter");
+                }
+                restaurant.close();
+                break;
+            case GEOFENCE_TRANSITION_DWELL:
+                visiting(restaurantId, true);
+                event("restaurant", "dwell");
+                break;
+            case GEOFENCE_TRANSITION_EXIT:
+                restaurant = restaurant(restaurantId);
+                if (restaurant.moveToFirst() && restaurant.getInt(Restaurants.VISITING) != 0) {
+                    visiting(restaurantId, false);
+                    if (!alreadyReviewed(restaurantId)) {
+                        String name = restaurant.getString(Restaurants.NAME);
+                        Bitmap icon =
+                                photo(context, RestaurantPhotos.uriForRestaurant(restaurantId));
+                        Notification notif = new Builder(context).setOnlyAlertOnce(true)
+                                .setTicker(name).setContentTitle(name)
+                                .setContentText(context.getString(R.string.comments_hint))
+                                .setLargeIcon(icon).setSmallIcon(R.drawable.stat_logo)
+                                .setPriority(PRIORITY_LOW)
+                                .setContentIntent(view(context, restaurantId, true, PRIVATE))
+                                .setAutoCancel(true).addAction(R.drawable.ic_action_location_off,
+                                        context.getString(R.string.ignore_restaurant),
+                                        ignore(context, restaurantId)).build();
+                        Managers.notification(context)
+                                .notify(TAG_GEOFENCE, (int) restaurantId, notif);
+                    } else {
+                        Managers.notification(context).cancel(TAG_GEOFENCE, (int) restaurantId);
+                    }
+                } else {
+                    Managers.notification(context).cancel(TAG_GEOFENCE, (int) restaurantId);
+                }
+                restaurant.close();
+                event("restaurant", "exit");
+                break;
         }
-        Managers.notification(context).notify(id, notif.build());
+    }
+
+    private static EasyCursor restaurant(long id) {
+        Uri uri = ContentUris.withAppendedId(Restaurants.CONTENT_URI, id);
+        String[] proj = {Restaurants.NAME, Restaurants.NOTES, Restaurants.VISITING};
+        return new EasyCursor(cr().query(uri, proj, null, null, null));
+    }
+
+    private static EasyCursor review(long restaurantId) {
+        Uri uri = Uris.limit(ReviewsJoinContacts.CONTENT_URI, 1);
+        String[] proj = {Reviews.TYPE_ID, Reviews.CONTACT_ID, Reviews.AUTHOR_NAME, Reviews.COMMENTS,
+                Reviews.RATING, millis(Reviews.WRITTEN_ON), Contacts.NAME};
+        String sel = Reviews.RESTAURANT_ID + " = ? AND length(" + Reviews.COMMENTS + ") > 0 AND "
+                + ReviewsJoinContacts.REVIEW_STATUS_ID + " = ?";
+        String[] args = StringArrays.from(restaurantId, ACTIVE.id);
+        String order = Reviews.TYPE_ID + ", " + Reviews.WRITTEN_ON + " DESC, "
+                + ReviewsJoinContacts.REVIEW__ID + " DESC";
+        return new EasyCursor(cr().query(uri, proj, sel, args, order));
+    }
+
+    private static Bitmap photo(Context context, Uri uri) {
+        try {
+            return Picasso.with(context).load(uri)
+                    .resizeDimen(android.R.dimen.notification_large_icon_width,
+                            android.R.dimen.notification_large_icon_height).centerCrop().get();
+        } catch (IOException e) { // contact or own restaurant may not have photo
+            Log.w(TAG, "loading contact or restaurant photo", e);
+        }
+        return null;
+    }
+
+    private static PendingIntent view(Context context, long restaurantId, boolean addReview,
+                                      Review.Type reviewType) {
+        Intent intent = new Intent(addReview ? ACTION_INSERT : ACTION_VIEW,
+                ContentUris.withAppendedId(Restaurants.CONTENT_URI, restaurantId),
+                context, RestaurantActivity.class)
+                .addFlags(FLAG_ACTIVITY_NEW_TASK).putExtra(EXTRA_ID, restaurantId)
+                .putExtra(EXTRA_TAB, reviewType == PRIVATE ? TAB_PRIVATE
+                        : reviewType == GOOGLE ? TAB_PUBLIC : TAB_NOTES);
+        return TaskStackBuilder.create(context).addNextIntentWithParentStack(intent)
+                .getPendingIntent(0, FLAG_UPDATE_CURRENT);
+    }
+
+    private static PendingIntent ignore(Context context, long restaurantId) {
+        Uri uri = ContentUris.withAppendedId(Restaurants.CONTENT_URI, restaurantId);
+        ContentValues vals = new ContentValues(2);
+        vals.put(Restaurants.GEOFENCE_NOTIFICATIONS, 0);
+        vals.put(Restaurants.DIRTY, 1);
+        Intent service = new Intent(ACTION_EDIT, uri, context, ContentService.class)
+                .putExtra(EXTRA_VALUES, vals).putExtra(EXTRA_NOTIFICATION_TAG, TAG_GEOFENCE)
+                .putExtra(EXTRA_NOTIFICATION_ID, (int) restaurantId);
+        return PendingIntent.getService(context, UPDATE_GEOFENCE_NOTIFICATIONS, service, 0);
+    }
+
+    private static void visiting(long restaurantId, boolean yes) {
+        ContentValues vals = new ContentValues(1);
+        vals.put(Restaurants.VISITING, yes ? 1 : 0);
+        cr().update(ContentUris.withAppendedId(Restaurants.CONTENT_URI, restaurantId), vals,
+                null, null);
+    }
+
+    private static boolean alreadyReviewed(long restaurantId) {
+        String[] proj = {"1"};
+        String sel = Reviews.RESTAURANT_ID + " = ? AND " + Reviews.TYPE_ID + " = ? AND "
+                + Reviews.CONTACT_ID + " IS NULL AND "
+                + Reviews.WRITTEN_ON + " >= datetime('now', '-4 hours')";
+        String[] args = StringArrays.from(restaurantId, PRIVATE.id);
+        Cursor c = cr().query(Uris.limit(Reviews.CONTENT_URI, 1), proj, sel, args, null);
+        int count = c.getCount();
+        c.close();
+        return count > 0;
     }
 }

@@ -46,9 +46,9 @@ import static net.sf.sprockets.gms.analytics.Trackers.exception;
 import static net.sf.sprockets.graphics.Palettes.MAX_COLORS;
 
 /**
- * Gets the most prominent {@link Columns#COLOR color} of a contact's photo. If {@link #EXTRA_ID}
- * is not provided, all contacts without a color will be updated. This is a low priority
- * operation and there will be a few seconds delay before each update.
+ * Gets the most prominent {@link Columns#COLOR color} of a contact's photo. If {@link #EXTRA_ID} is
+ * not provided, all contacts without a color will be updated. This is a low priority operation and
+ * there will be a few seconds delay before each update.
  */
 public class FriendColorService extends IntentService {
     /**
@@ -88,7 +88,8 @@ public class FriendColorService extends IntentService {
             Bitmap photo = Picasso.with(this)
                     .load(ContactsContract.Contacts.getLookupUri(androidId, lookupKey)).get();
             if (photo != null) {
-                Swatch swatch = Palettes.getMostPopulousSwatch(Palette.generate(photo, MAX_COLORS));
+                Swatch swatch = Palettes.getMostPopulousSwatch(
+                        Palette.from(photo).maximumColorCount(MAX_COLORS).generate());
                 if (swatch != null) {
                     ContentValues vals = new ContentValues(1);
                     vals.put(Contacts.COLOR, swatch.getRgb());

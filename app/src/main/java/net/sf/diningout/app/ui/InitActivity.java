@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 pushbit <pushbit@gmail.com>
+ * Copyright 2013-2015 pushbit <pushbit@gmail.com>
  *
  * This file is part of Dining Out.
  *
@@ -59,9 +59,10 @@ import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static com.google.android.gms.auth.GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE;
 import static net.sf.diningout.app.InitService.EXTRA_CONTACT_IDS;
 import static net.sf.diningout.app.InitService.EXTRA_RESTAURANTS;
-import static net.sf.diningout.preference.Keys.ACCOUNT_INITIALISED;
-import static net.sf.diningout.preference.Keys.ACCOUNT_NAME;
-import static net.sf.diningout.preference.Keys.ONBOARDED;
+import static net.sf.diningout.preference.Keys.App.ACCOUNT_INITIALISED;
+import static net.sf.diningout.preference.Keys.App.ACCOUNT_NAME;
+import static net.sf.diningout.preference.Keys.App.APP;
+import static net.sf.diningout.preference.Keys.App.ONBOARDED;
 import static net.sf.diningout.provider.Contract.ACTION_USER_LOGGED_IN;
 import static net.sf.diningout.provider.Contract.AUTHORITY;
 import static net.sf.diningout.provider.Contract.EXTRA_HAS_RESTAURANTS;
@@ -72,8 +73,8 @@ import static net.sf.sprockets.view.animation.Interpolators.ANTICIPATE;
 /**
  * Logs the user into the server and helps them get started or restores their existing data.
  */
-public class InitActivity extends PanesActivity implements InitRestaurantsFragment.Listener,
-        FriendsFragment.Listener {
+public class InitActivity extends PanesActivity
+        implements InitRestaurantsFragment.Listener, FriendsFragment.Listener {
     /**
      * Tag for the progress bar fragment.
      */
@@ -82,19 +83,23 @@ public class InitActivity extends PanesActivity implements InitRestaurantsFragme
     @Optional
     @InjectView(R.id.panes)
     ViewPager mPager;
+
     /**
      * True if the Receiver is listening for a broadcast.
      */
     @Icicle
     boolean mListening;
+
     /**
      * Listens for the user to be logged in to the server.
      */
     private final Receiver mReceiver = new Receiver();
+
     /**
      * Number of restaurants that have been selected.
      */
     private int mRestaurantsSel;
+
     /**
      * Number of friends that have been selected.
      */
@@ -115,7 +120,7 @@ public class InitActivity extends PanesActivity implements InitRestaurantsFragme
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         if (savedInstanceState == null) {
-            if (!Prefs.getBoolean(this, ACCOUNT_INITIALISED)) {
+            if (!Prefs.getBoolean(this, APP, ACCOUNT_INITIALISED)) {
                 startActivityForResult(AccountManager.newChooseAccountIntent(null, null,
                         new String[]{GOOGLE_ACCOUNT_TYPE}, false, null, null, null, null), 0);
             } else {
@@ -128,7 +133,7 @@ public class InitActivity extends PanesActivity implements InitRestaurantsFragme
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) { // initialise the selected account
-            Prefs.putString(this, ACCOUNT_NAME, data.getStringExtra(KEY_ACCOUNT_NAME));
+            Prefs.putString(this, APP, ACCOUNT_NAME, data.getStringExtra(KEY_ACCOUNT_NAME));
             Account account = Accounts.selected();
             ContentResolver.setIsSyncable(account, AUTHORITY, 1);
             ContentResolver.setSyncAutomatically(account, AUTHORITY, true);
@@ -149,6 +154,7 @@ public class InitActivity extends PanesActivity implements InitRestaurantsFragme
     public void onContentChanged() {
         super.onContentChanged();
         if (mPager != null) {
+            mPager.setPageMargin(res().getDimensionPixelOffset(R.dimen.cards_parent_margin));
             mPager.setAlpha(0.0f);
             mPager.animate().alpha(1.0f).withLayer();
             mPager.setOnPageChangeListener(new SimpleOnPageChangeListener() {
@@ -193,7 +199,7 @@ public class InitActivity extends PanesActivity implements InitRestaurantsFragme
                     FriendsFragment friends = findFragmentByPane(2);
                     long[] followed = friends.getFollowedFriends();
                     startService(intent.putExtra(EXTRA_CONTACT_IDS, followed));
-                    Prefs.putBoolean(this, ONBOARDED, true);
+                    Prefs.putBoolean(this, APP, ONBOARDED, true);
                     startActivity(new Intent(this, RestaurantsActivity.class));
                     friends.invite();
                     finish(); // last so invite returns to restaurants

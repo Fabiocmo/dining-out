@@ -4,8 +4,8 @@ android {
     compileSdkVersion 22
     buildToolsVersion '22.0.1'
     defaultConfig {
-        versionCode 109
-        versionName '1.6.0'
+        versionCode 110
+        versionName '1.7.0'
         minSdkVersion 16
         targetSdkVersion 22
         proguardFiles getDefaultProguardFile('proguard-android.txt'),
@@ -34,10 +34,6 @@ android {
             signingConfig signingConfigs.release
         }
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
-    }
     packagingOptions {
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
@@ -49,12 +45,12 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':data')
     compile project(':sprockets')
-    compile 'in.srain.cube:grid-view-with-header-footer:1.0.9'
-    compile 'com.astuetz:pagerslidingtabstrip:1.0.1'
-    compile 'com.github.castorflex.smoothprogressbar:library:1.1.0'
-    compile 'com.cocosw:undobar:1.7.1'
-    compile 'jp.wasabeef:picasso-transformations:1.0.2'
-    compile 'jp.co.cyberagent.android.gpuimage:gpuimage-library:1.2.3'
     compile 'com.amulyakhare:com.amulyakhare.textdrawable:1.0.1'
+    compile 'com.astuetz:pagerslidingtabstrip:1.0.1'
+    compile 'com.cocosw:undobar:1.8.1'
+    compile 'com.github.castorflex.smoothprogressbar:library:1.1.0'
     compile 'commons-dbutils:commons-dbutils:1.6'
+    compile 'in.srain.cube:grid-view-with-header-footer:1.0.11'
+    compile 'jp.co.cyberagent.android.gpuimage:gpuimage-library:1.2.3'
+    compile 'jp.wasabeef:picasso-transformations:1.0.4'
 }

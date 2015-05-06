@@ -1,16 +1,16 @@
 /*
  * Copyright 2014-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -57,7 +57,6 @@ import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static android.widget.AdapterView.INVALID_POSITION;
 import static net.sf.diningout.provider.Contract.Restaurants.SEARCH_TYPES;
-import static net.sf.sprockets.app.SprocketsApplication.res;
 import static net.sf.sprockets.google.Places.Params.RankBy.DISTANCE;
 import static net.sf.sprockets.google.Places.Request.NEARBY_SEARCH;
 import static net.sf.sprockets.google.Places.Response.Status.UNKNOWN_ERROR;
@@ -71,12 +70,16 @@ public class RestaurantsNearbyFragment extends SprocketsFragment
     @Optional
     @InjectView(R.id.header)
     TextView mHeader;
+
     @InjectView(R.id.progress)
     View mProgress;
+
     @InjectView(R.id.empty)
     ViewStub mEmptyStub;
+
     @InjectView(R.id.list)
     GridViewWithHeaderAndFooter mGrid;
+
     @Icicle
     String mSearch;
     private TextView mEmpty;
@@ -104,10 +107,6 @@ public class RestaurantsNearbyFragment extends SprocketsFragment
             if (!TextUtils.isEmpty(mSearch)) { // loader data is search results
                 mHeader.setText(R.string.search_results_title);
             }
-        } else { // add padding between autocomplete card and grid
-            int parent = res().getDimensionPixelOffset(R.dimen.cards_parent_margin);
-            int sibling = res().getDimensionPixelOffset(R.dimen.cards_sibling_margin);
-            mGrid.setPadding(parent, sibling, parent, sibling);
         }
         mGrid.addFooterView(new PoweredByGoogle(a));
         mAdapter = new RestaurantPlacesAdapter(mGrid);

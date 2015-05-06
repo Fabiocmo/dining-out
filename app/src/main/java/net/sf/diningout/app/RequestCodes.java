@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 pushbit <pushbit@gmail.com>
+ * Copyright 2015 pushbit <pushbit@gmail.com>
  *
  * This file is part of Dining Out.
  *
@@ -15,31 +15,17 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package net.sf.diningout.data;
+package net.sf.diningout.app;
 
-import java.util.List;
+import android.app.PendingIntent;
 
 /**
- * Changes from the server.
+ * Unique integer codes that differentiate application scope requests. For example, when retrieving
+ * {@link PendingIntent}s.
  */
-public class Syncing {
-    /**
-     * Any user changes or null.
-     */
-    public List<Sync<User>> users;
+public class RequestCodes {
+    public static final int UPDATE_GEOFENCE_NOTIFICATIONS = 1;
 
-    /**
-     * Any restaurant changes or null.
-     */
-    public List<Sync<Restaurant>> restaurants;
-
-    /**
-     * Any review changes or null.
-     */
-    public List<Sync<Review>> reviews;
-
-    /**
-     * Any review draft changes or null.
-     */
-    public List<Sync<Review>> reviewDrafts;
+    private RequestCodes() {
+    }
 }

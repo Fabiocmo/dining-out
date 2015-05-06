@@ -30,7 +30,8 @@ import net.sf.sprockets.preference.Prefs;
 import java.io.IOException;
 
 import static net.sf.diningout.net.Server.BACKOFF_RETRIES;
-import static net.sf.diningout.preference.Keys.ACCOUNT_NAME;
+import static net.sf.diningout.preference.Keys.App.ACCOUNT_NAME;
+import static net.sf.diningout.preference.Keys.App.APP;
 import static net.sf.sprockets.app.SprocketsApplication.context;
 import static net.sf.sprockets.gms.analytics.Trackers.event;
 import static net.sf.sprockets.gms.analytics.Trackers.exception;
@@ -53,7 +54,7 @@ public class AuthToken {
      */
     public static boolean isAvailable() {
         Context context = context();
-        String account = Prefs.getString(context, ACCOUNT_NAME);
+        String account = Prefs.getString(context, APP, ACCOUNT_NAME);
         if (!TextUtils.isEmpty(account)) {
             for (int i = 0; i < BACKOFF_RETRIES; i++) {
                 try {

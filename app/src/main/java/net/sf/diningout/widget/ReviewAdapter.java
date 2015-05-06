@@ -1,16 +1,16 @@
 /*
  * Copyright 2014-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -30,6 +30,7 @@ import com.squareup.picasso.Callback.EmptyCallback;
 import com.squareup.picasso.Picasso;
 
 import net.sf.diningout.R;
+import net.sf.diningout.data.Review.Type;
 import net.sf.diningout.picasso.Placeholders;
 import net.sf.diningout.provider.Contract.Contacts;
 import net.sf.diningout.provider.Contract.Reviews;
@@ -66,7 +67,7 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
      * Load the contact's photo into the View.
      */
     private void photo(Context context, final ImageView view, EasyCursor c) {
-        if (c.getColumnIndex(Reviews.CONTACT_ID) >= 0 && !c.isNull(Reviews.CONTACT_ID)) {
+        if (!c.isNull(Reviews.CONTACT_ID)) {
             String key = c.getString(Contacts.ANDROID_LOOKUP_KEY);
             long id = c.getLong(Contacts.ANDROID_ID);
             Uri uri = key != null && id > 0 ? ContactsContract.Contacts.getLookupUri(id, key)
@@ -90,18 +91,18 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
      * Get the name of the reviewer.
      */
     public static String name(Context context, EasyCursor c) {
-        String name;
-        if (c.getColumnIndex(Reviews.CONTACT_ID) >= 0) { // private review
-            if (!c.isNull(Reviews.CONTACT_ID)) {
-                name = !c.isNull(Contacts.NAME) ? c.getString(Contacts.NAME)
-                        : context.getString(R.string.non_contact);
-            } else {
-                name = context.getString(R.string.me);
-            }
-        } else { // public review
-            name = c.getString(Reviews.AUTHOR_NAME);
+        switch (Type.get(c.getInt(Reviews.TYPE_ID))) {
+            case PRIVATE:
+                if (!c.isNull(Reviews.CONTACT_ID)) {
+                    return !c.isNull(Contacts.NAME) ? c.getString(Contacts.NAME)
+                            : context.getString(R.string.non_contact);
+                } else {
+                    return context.getString(R.string.me);
+                }
+            case GOOGLE:
+                return c.getString(Reviews.AUTHOR_NAME);
         }
-        return name;
+        return null;
     }
 
     /**
@@ -132,12 +133,16 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
     public static class ReviewHolder extends ViewHolder {
         @InjectView(R.id.photo)
         ImageView mPhoto;
+
         @InjectView(R.id.name)
         TextView mName;
+
         @InjectView(R.id.time)
         TextView mTime;
+
         @InjectView(R.id.rating)
         TextView mRating;
+
         @InjectView(R.id.comments)
         TextView mComments;
 

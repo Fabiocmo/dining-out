@@ -31,6 +31,8 @@ import java.util.List;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
+import static net.sf.sprockets.app.SprocketsApplication.res;
+
 /**
  * Displays the 'Powered by Google' logo and any content attributions.
  */
@@ -48,6 +50,9 @@ public class PoweredByGoogle extends RelativeLayout {
 
     public PoweredByGoogle(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        int tb = res().getDimensionPixelSize(R.dimen.padding);
+        int lr = res().getDimensionPixelSize(R.dimen.padding_large);
+        setPadding(lr, tb, lr, tb);
         View.inflate(context, R.layout.powered_by_google, this);
         ButterKnife.inject(this);
     }

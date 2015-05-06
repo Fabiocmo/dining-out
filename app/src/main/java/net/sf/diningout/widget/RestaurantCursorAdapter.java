@@ -1,16 +1,16 @@
 /*
  * Copyright 2013-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -28,7 +28,6 @@ import net.sf.diningout.provider.Contract.RestaurantPhotos;
 import net.sf.diningout.provider.Contract.Restaurants;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.view.ViewHolder;
-import net.sf.sprockets.widget.GridCard;
 import net.sf.sprockets.widget.ResourceEasyCursorAdapter;
 
 import static android.provider.BaseColumns._ID;
@@ -38,11 +37,6 @@ import static android.provider.BaseColumns._ID;
  */
 public class RestaurantCursorAdapter extends ResourceEasyCursorAdapter {
     private final GridView mView;
-
-    /**
-     * Restaurant photo is resized according to these measurements.
-     */
-    private final GridCard mCard;
     private long mSelectedId;
 
     /**
@@ -63,7 +57,6 @@ public class RestaurantCursorAdapter extends ResourceEasyCursorAdapter {
     public RestaurantCursorAdapter(GridView view) {
         super(view.getContext(), R.layout.restaurants_adapter, null, 0);
         mView = view;
-        mCard = new GridCard(view);
     }
 
     /**
@@ -104,7 +97,7 @@ public class RestaurantCursorAdapter extends ResourceEasyCursorAdapter {
     @Override
     public void bindView(View view, Context context, EasyCursor c) {
         RestaurantHolder restaurant = ViewHolder.get(view, RestaurantHolder.class);
-        restaurant.photo(RestaurantPhotos.uriForRestaurant(c.getLong(_ID)), mCard, c)
+        restaurant.photo(RestaurantPhotos.uriForRestaurant(c.getLong(_ID)), mView, c)
                 .name(c.getString(Restaurants.NAME));
         if (mHasRating) {
             restaurant.rating(c.getFloat(Restaurants.RATING));

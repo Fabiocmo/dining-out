@@ -30,8 +30,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_toLeftOf="@id/detail"
-        android:layout_marginLeft="@dimen/padding"
-        android:layout_marginRight="@dimen/padding"
+        android:layout_marginRight="@dimen/grid_spacing_small"
         class="net.sf.diningout.app.ui.RestaurantsFragment"/>
 
 </RelativeLayout>

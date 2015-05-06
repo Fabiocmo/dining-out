@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 144dp + padding -->
-    <dimen name="notification_card_height">162dp</dimen>
+    <dimen name="notification_card_height">160dp</dimen>
 </resources>

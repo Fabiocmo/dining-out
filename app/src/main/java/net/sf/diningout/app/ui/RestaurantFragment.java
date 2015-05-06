@@ -66,6 +66,7 @@ import net.sf.diningout.provider.Contract.OpenDays;
 import net.sf.diningout.provider.Contract.OpenHours;
 import net.sf.diningout.provider.Contract.RestaurantPhotos;
 import net.sf.diningout.provider.Contract.Restaurants;
+import net.sf.sprockets.app.ContentService;
 import net.sf.sprockets.app.ui.SprocketsFragment;
 import net.sf.sprockets.content.Content.Query;
 import net.sf.sprockets.content.EasyCursorLoader;
@@ -93,6 +94,7 @@ import butterknife.Optional;
 import icepick.Icicle;
 
 import static android.content.Intent.ACTION_DIAL;
+import static android.content.Intent.ACTION_EDIT;
 import static android.content.Intent.ACTION_SEND;
 import static android.content.Intent.ACTION_VIEW;
 import static android.content.Intent.EXTRA_SUBJECT;
@@ -108,6 +110,7 @@ import static net.sf.diningout.app.ui.RestaurantActivity.EXTRA_ID;
 import static net.sf.diningout.app.ui.RestaurantsActivity.EXTRA_DELETE_ID;
 import static net.sf.diningout.data.OpenHour.Type.OPEN;
 import static net.sf.diningout.picasso.Transformations.LEFT;
+import static net.sf.sprockets.app.ContentService.EXTRA_VALUES;
 import static net.sf.sprockets.app.SprocketsApplication.cr;
 import static net.sf.sprockets.app.SprocketsApplication.res;
 import static net.sf.sprockets.gms.analytics.Trackers.event;
@@ -170,6 +173,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
     private String mUrl;
     private View mEditWebsiteGroup;
     private EditText mEditWebsite;
+    private boolean mWantsNotif;
     private final Intent mShare = new Intent(ACTION_SEND).setType("text/plain");
     private boolean mPhotoLoaded;
     private boolean mIsOpen;
@@ -217,13 +221,13 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
                 q.proj(Restaurants.PLACE_ID, Restaurants.GOOGLE_URL, Restaurants.NAME,
                         Restaurants.ADDRESS, Restaurants.VICINITY, Restaurants.LATITUDE,
                         Restaurants.LONGITUDE, Restaurants.INTL_PHONE, Restaurants.LOCAL_PHONE,
-                        Restaurants.URL, Restaurants.COLOR);
+                        Restaurants.URL, Restaurants.COLOR, Restaurants.GEOFENCE_NOTIFICATIONS);
                 break;
             case LOAD_HOURS:
                 Calendar cal = Calendar.getInstance();
                 mDayOfWeek = Maths.rollover(cal.get(DAY_OF_WEEK) - 2, 0, 6); // from Sun=1 to Mon=0
                 int time = cal.get(HOUR_OF_DAY) * 100 + cal.get(MINUTE);
-                q.uri(Uris.limit(OpenHours.CONTENT_URI, "1")).proj(OpenHours.TYPE_ID)
+                q.uri(Uris.limit(OpenHours.CONTENT_URI, 1)).proj(OpenHours.TYPE_ID)
                         .sel(OpenHours.RESTAURANT_ID + " = ? AND ("
                                 + OpenHours.DAY + " = ? AND " + OpenHours.TIME + " <= ? OR "
                                 + OpenHours.DAY + " < ?)").args(mId, mDayOfWeek, time, mDayOfWeek)
@@ -255,6 +259,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
                     mLocalPhone.setText(c.getString(Restaurants.LOCAL_PHONE));
                     mUrl = c.getString(Restaurants.URL);
                     mWebsite.setText(!TextUtils.isEmpty(mUrl) ? Uri.parse(mUrl).getHost() : null);
+                    mWantsNotif = c.getInt(Restaurants.GEOFENCE_NOTIFICATIONS) == 1;
                     /* prompt to add details for own restaurant */
                     if (mPlaceId == null) {
                         if (TextUtils.isEmpty(mAddress)) {
@@ -318,9 +323,8 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
                             String[] proj = {OpenHours.TYPE_ID};
                             String sel = OpenHours.RESTAURANT_ID + " = ?";
                             String[] args = {String.valueOf(mId)};
-                            String order = OpenHours.DAY + " DESC, " + OpenHours.TIME + " DESC";
-                            return cr().query(Uris.limit(OpenHours.CONTENT_URI, "1"), proj,
-                                    sel, args, order);
+                            return cr().query(Uris.limit(OpenHours.CONTENT_URI, 1), proj, sel, args,
+                                    OpenHours.DAY + " DESC, " + OpenHours.TIME + " DESC");
                         }
 
                         @Override
@@ -380,8 +384,23 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
     }
 
     @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        menu.findItem(R.id.notifications).setChecked(mWantsNotif);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.notifications:
+                item.setChecked(!item.isChecked());
+                Uri uri = ContentUris.withAppendedId(Restaurants.CONTENT_URI, mId);
+                ContentValues vals = new ContentValues(2);
+                vals.put(Restaurants.GEOFENCE_NOTIFICATIONS, item.isChecked() ? 1 : 0);
+                vals.put(Restaurants.DIRTY, 1);
+                a.startService(new Intent(ACTION_EDIT, uri, a, ContentService.class)
+                        .putExtra(EXTRA_VALUES, vals));
+                return true;
             case R.id.refresh:
                 a.startService(new Intent(a, RestaurantService.class)
                         .putExtra(RestaurantService.EXTRA_ID, mId));

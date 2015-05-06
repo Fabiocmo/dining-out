@@ -55,7 +55,9 @@ CREATE TABLE restaurant (
     rating REAL, -- 1.0-5.0, average of all reviews
     color INTEGER, -- most prominent in photo
     notes TEXT COLLATE LOCALIZED,
-    last_visit_on TEXT, -- cached from visit
+    geofence_notifications INTEGER NOT NULL DEFAULT 1,
+    visiting INTEGER NOT NULL DEFAULT 0,
+    last_visit_on TEXT, -- cached from review
     refreshed_on TEXT,
     status_id INTEGER NOT NULL DEFAULT 1,
     merged_into_id INTEGER,

@@ -10,19 +10,14 @@
         android:id="@+id/progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/cards_parent_margin"
-        android:layout_marginRight="@dimen/cards_parent_margin"
-        android:alpha="0.0"
         android:indeterminate="true"
+        android:alpha="0.0"
         android:visibility="gone"/>
 
     <ViewStub
         android:id="@+id/empty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/cards_parent_margin"
-        android:layout_marginRight="@dimen/cards_parent_margin"
-        android:layout_marginTop="@dimen/cards_sibling_margin"
         android:layout="@layout/restaurants_nearby_empty"/>
 
     <in.srain.cube.views.GridViewWithHeaderAndFooter
@@ -30,17 +25,12 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:alpha="0.0"
-        android:choiceMode="singleChoice"
-        android:clipToPadding="false"
-        android:columnWidth="@dimen/grid_card_width"
-        android:drawSelectorOnTop="true"
-        android:horizontalSpacing="@dimen/cards_sibling_margin"
+        android:columnWidth="@dimen/grid_column_width"
         android:numColumns="auto_fit"
-        android:paddingBottom="@dimen/cards_sibling_margin"
-        android:paddingLeft="@dimen/cards_parent_margin"
-        android:paddingRight="@dimen/cards_parent_margin"
-        android:scrollbarStyle="outsideOverlay"
-        android:verticalSpacing="@dimen/cards_sibling_margin"/>
+        android:horizontalSpacing="@dimen/grid_spacing_small"
+        android:verticalSpacing="@dimen/grid_spacing_small"
+        android:choiceMode="singleChoice"
+        android:drawSelectorOnTop="true"
+        android:alpha="0.0"/>
 
 </LinearLayout>

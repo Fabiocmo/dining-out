@@ -1,16 +1,16 @@
 /*
  * Copyright 2013-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -206,7 +206,7 @@ public class RestaurantsFragment extends SprocketsFragment
                     EasyCursor c = (EasyCursor) mGrid.getItemAtPosition(i);
                     for (String field : sShareFields) {
                         String detail = c.getString(field);
-                        if (count == 1 && field == Restaurants.NAME) {
+                        if (count == 1 && field.equals(Restaurants.NAME)) {
                             mShare.putExtra(EXTRA_SUBJECT, detail);
                         }
                         if (!TextUtils.isEmpty(detail)) {

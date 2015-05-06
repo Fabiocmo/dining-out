@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ab_list_selector_background">#40cccccc</color>
-    <color name="ab_list_focused">#4dcccccc</color>
+    <color name="ab_list_selector_background">#99880000</color>
+    <color name="ab_list_focused">#4d880000</color>
     <color name="highlight">#880000</color>
     <color name="text_highlight">#99880000</color>
-    <color name="list_selector_background">#33880000</color>
+    <color name="card_activated">#bb880000</color>
+    <color name="list_selector_background">#44880000</color>
     <color name="list_focused">#4d880000</color>
-    <color name="list_activated">#cc880000</color>
+    <color name="list_activated">#88880000</color>
     <color name="spb_default_color">@color/highlight</color>
     <!-- Transparency matches drawables. -->
     <color name="cell_secondary">#ccffffff</color>

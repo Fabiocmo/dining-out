@@ -85,7 +85,8 @@ public class RestaurantColorService extends IntentService {
         try {
             Bitmap photo = Picasso.with(this).load(RestaurantPhotos.uriForRestaurant(id)).get();
             if (photo != null) {
-                Swatch swatch = Palettes.getMostPopulousSwatch(Palette.generate(photo, MAX_COLORS));
+                Swatch swatch = Palettes.getMostPopulousSwatch(
+                        Palette.from(photo).maximumColorCount(MAX_COLORS).generate());
                 if (swatch != null) {
                     ContentValues vals = new ContentValues(1);
                     vals.put(Restaurants.COLOR, swatch.getRgb());

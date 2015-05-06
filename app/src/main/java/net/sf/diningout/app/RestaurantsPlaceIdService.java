@@ -36,7 +36,8 @@ import net.sf.sprockets.preference.Prefs;
 import java.io.IOException;
 
 import static android.provider.BaseColumns._ID;
-import static net.sf.diningout.preference.Keys.MIGRATE_TO_PLACE_ID;
+import static net.sf.diningout.preference.Keys.App.APP;
+import static net.sf.diningout.preference.Keys.App.MIGRATE_TO_PLACE_ID;
 import static net.sf.sprockets.app.SprocketsApplication.cr;
 import static net.sf.sprockets.gms.analytics.Trackers.event;
 import static net.sf.sprockets.gms.analytics.Trackers.exception;
@@ -90,7 +91,7 @@ public class RestaurantsPlaceIdService extends IntentService {
             }
         }
         if (c.getCount() == 0) { // all done
-            Prefs.putBoolean(this, MIGRATE_TO_PLACE_ID, false);
+            Prefs.putBoolean(this, APP, MIGRATE_TO_PLACE_ID, false);
         }
         c.close();
     }

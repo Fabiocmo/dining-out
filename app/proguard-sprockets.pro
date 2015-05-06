@@ -1,4 +1,5 @@
 # Sprockets ProGuard rules
+-dontobfuscate
 
 # butterknife
 -dontwarn butterknife.internal.**

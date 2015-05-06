@@ -1,16 +1,16 @@
 /*
  * Copyright 2014-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -51,9 +51,9 @@ import net.sf.diningout.provider.Contract.SyncsJoinAll;
 import net.sf.sprockets.app.ui.SprocketsFragment;
 import net.sf.sprockets.content.EasyCursorLoader;
 import net.sf.sprockets.database.EasyCursor;
+import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.util.StringArrays;
 import net.sf.sprockets.view.ViewHolder;
-import net.sf.sprockets.widget.GridCard;
 import net.sf.sprockets.widget.ResourceEasyCursorAdapter;
 
 import butterknife.ButterKnife;
@@ -67,6 +67,7 @@ import static net.sf.diningout.data.Status.ACTIVE;
 import static net.sf.diningout.data.Sync.Type.REVIEW;
 import static net.sf.diningout.data.Sync.Type.USER;
 import static net.sf.diningout.picasso.Transformations.BR;
+import static net.sf.sprockets.app.SprocketsApplication.res;
 import static net.sf.sprockets.sql.SQLite.alias_;
 import static net.sf.sprockets.sql.SQLite.aliased_;
 import static net.sf.sprockets.sql.SQLite.millis;
@@ -74,8 +75,8 @@ import static net.sf.sprockets.sql.SQLite.millis;
 /**
  * Displays a list of notifications. Activities that attach this must implement {@link Listener}.
  */
-public class NotificationsFragment extends SprocketsFragment implements LoaderCallbacks<EasyCursor>,
-        OnItemClickListener {
+public class NotificationsFragment extends SprocketsFragment
+        implements LoaderCallbacks<EasyCursor>, OnItemClickListener {
     @InjectView(R.id.list)
     GridView mGrid;
     private Listener mListener;
@@ -94,7 +95,7 @@ public class NotificationsFragment extends SprocketsFragment implements LoaderCa
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        mGrid.setAdapter(new NotificationsAdapter(mGrid));
+        mGrid.setAdapter(new NotificationsAdapter());
         mGrid.setOnItemClickListener(this);
     }
 
@@ -107,7 +108,7 @@ public class NotificationsFragment extends SprocketsFragment implements LoaderCa
     @Override
     public Loader<EasyCursor> onCreateLoader(int id, Bundle args) {
         String[] proj = {SyncsJoinAll.SYNC__ID, alias_(SyncsJoinAll.SYNC_TYPE_ID),
-                millis(Syncs.ACTION_ON), alias_(SyncsJoinAll.REVIEW_TYPE_ID),
+                millis("max", Syncs.ACTION_ON), alias_(SyncsJoinAll.REVIEW_TYPE_ID),
                 alias_(SyncsJoinAll.RESTAURANT__ID), alias_(SyncsJoinAll.RESTAURANT_NAME),
                 alias_(SyncsJoinAll.CONTACT__ID), Contacts.ANDROID_LOOKUP_KEY, Contacts.ANDROID_ID,
                 alias_(SyncsJoinAll.CONTACT_NAME), "coalesce(" + SyncsJoinAll.RESTAURANT_COLOR + ","
@@ -116,8 +117,10 @@ public class NotificationsFragment extends SprocketsFragment implements LoaderCa
                 + " = ? AND " + SyncsJoinAll.RESTAURANT_STATUS_ID + " = ? OR "
                 + SyncsJoinAll.SYNC_TYPE_ID + " = ? AND " + SyncsJoinAll.CONTACT_STATUS_ID + " = ?";
         String[] selArgs = StringArrays.from(REVIEW.id, ACTIVE.id, ACTIVE.id, USER.id, ACTIVE.id);
+        Uri uri = Uris.groupBy(SyncsJoinAll.CONTENT_URI,
+                SyncsJoinAll.RESTAURANT__ID + ", " + SyncsJoinAll.CONTACT__ID);
         String order = Syncs.ACTION_ON + " DESC";
-        return new EasyCursorLoader(a, SyncsJoinAll.CONTENT_URI, proj, sel, selArgs, order);
+        return new EasyCursorLoader(a, uri, proj, sel, selArgs, order);
     }
 
     @Override
@@ -189,14 +192,11 @@ public class NotificationsFragment extends SprocketsFragment implements LoaderCa
      * Translates notification rows to Views.
      */
     private class NotificationsAdapter extends ResourceEasyCursorAdapter {
-        /**
-         * Notification photo is resized according to these measurements.
-         */
-        private final GridCard mCard;
+        private final int mCellHeight;
 
-        private NotificationsAdapter(GridView view) {
-            super(view.getContext(), R.layout.notifications_adapter, null, 0);
-            mCard = new GridCard(view, R.dimen.notification_card_height);
+        private NotificationsAdapter() {
+            super(a, R.layout.notifications_adapter, null, 0);
+            mCellHeight = res().getDimensionPixelSize(R.dimen.notification_card_height);
         }
 
         @Override
@@ -219,8 +219,8 @@ public class NotificationsFragment extends SprocketsFragment implements LoaderCa
                     String restaurant = c.getString(aliased_(SyncsJoinAll.RESTAURANT_NAME));
                     switch (Review.Type.get(c.getInt(aliased_(SyncsJoinAll.REVIEW_TYPE_ID)))) {
                         case PRIVATE:
-                            action = context.getString(
-                                    R.string.new_friend_review, contact(context, c), restaurant);
+                            action = context.getString(R.string.new_friend_review,
+                                    contact(context, c), restaurant);
                             break;
                         case GOOGLE:
                             action = context.getString(R.string.new_public_review, restaurant);
@@ -228,7 +228,7 @@ public class NotificationsFragment extends SprocketsFragment implements LoaderCa
                     }
                     break;
             }
-            Picasso.with(context).load(photo).resize(mCard.getWidth(), mCard.getHeight())
+            Picasso.with(context).load(photo).resize(mGrid.getColumnWidth(), mCellHeight)
                     .centerCrop().transform(BR).placeholder(Placeholders.rect(c))
                     .into(notif.mPhoto);
             notif.mAction.setText(action);
@@ -254,8 +254,10 @@ public class NotificationsFragment extends SprocketsFragment implements LoaderCa
     public static class NotificationHolder extends ViewHolder {
         @InjectView(R.id.photo)
         ImageView mPhoto;
+
         @InjectView(R.id.action)
         TextView mAction;
+
         @InjectView(R.id.time)
         TextView mTime;
 

@@ -1,16 +1,16 @@
 /*
  * Copyright 2013-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -491,6 +491,16 @@ public class Contract {
         String NOTES = "notes";
 
         /**
+         * Notify when near the restaurant.
+         */
+        String GEOFENCE_NOTIFICATIONS = "geofence_notifications";
+
+        /**
+         * True (1) if the user has been near the restaurant for a while.
+         */
+        String VISITING = "visiting";
+
+        /**
          * When the user last visited the restaurant. Null if not visited.
          */
         String LAST_VISIT_ON = "last_visit_on";
@@ -665,7 +675,7 @@ public class Contract {
             int count = c.getCount();
             String address = Cursors.firstString(c);
             /* prepare for insert/update */
-            ContentValues vals = new ContentValues(16); // one extra space in case color added
+            ContentValues vals = new ContentValues(17); // one extra space in case color added
             vals.put(GLOBAL_ID, restaurant.globalId);
             vals.put(PLACE_ID, restaurant.placeId);
             if (!TextUtils.isEmpty(restaurant.placeId)) {
@@ -692,6 +702,7 @@ public class Contract {
                 vals.put(URL, restaurant.url);
             }
             vals.put(NOTES, restaurant.notes);
+            vals.put(GEOFENCE_NOTIFICATIONS, restaurant.showGeofenceNotifications ? 1 : 0);
             vals.put(STATUS_ID, restaurant.status.id);
             if (count == 0) { // adding from sync
                 vals.put(DIRTY, 0);
@@ -734,6 +745,10 @@ public class Contract {
                 col = c.getColumnIndex(NOTES);
                 if (col >= 0) {
                     restaurant.notes = c.getString(col);
+                }
+                col = c.getColumnIndex(GEOFENCE_NOTIFICATIONS);
+                if (col >= 0) {
+                    restaurant.showGeofenceNotifications = c.getInt(col) == 1;
                 }
                 if (restaurants == null) {
                     restaurants = new ArrayList<>(c.getCount());

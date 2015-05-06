@@ -7,39 +7,30 @@
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/cards_parent_margin"
-        android:layout_marginRight="@dimen/cards_parent_margin"
-        android:layout_marginTop="@dimen/cards_parent_margin"
-        android:inflatedId="@+id/header"
-        android:layout="@layout/friends_header"/>
+        android:layout="@layout/friends_header"
+        android:inflatedId="@+id/header"/>
 
     <GridView
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/header"
-        android:choiceMode="multipleChoice"
-        android:clipToPadding="false"
-        android:columnWidth="@dimen/grid_card_width"
-        android:drawSelectorOnTop="true"
-        android:horizontalSpacing="@dimen/cards_sibling_margin"
+        android:columnWidth="@dimen/grid_column_width"
         android:numColumns="auto_fit"
-        android:paddingBottom="@dimen/cards_parent_margin"
-        android:paddingLeft="@dimen/cards_parent_margin"
-        android:paddingRight="@dimen/cards_parent_margin"
+        android:horizontalSpacing="@dimen/grid_spacing_small"
+        android:verticalSpacing="@dimen/grid_spacing_small"
         android:paddingTop="@dimen/cards_sibling_margin"
-        android:scrollbarStyle="outsideOverlay"
-        android:verticalSpacing="@dimen/cards_sibling_margin"/>
+        android:clipToPadding="false"
+        android:choiceMode="multipleChoice"
+        android:drawSelectorOnTop="true"/>
 
     <fr.castorflex.android.smoothprogressbar.SmoothProgressBar
         android:id="@+id/progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/header"
-        android:layout_marginLeft="@dimen/cards_parent_margin"
-        android:layout_marginRight="@dimen/cards_parent_margin"
-        android:alpha="0.0"
         android:indeterminate="true"
+        android:alpha="0.0"
         android:visibility="gone"/>
 
 </RelativeLayout>

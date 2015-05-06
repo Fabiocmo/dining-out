@@ -117,15 +117,19 @@
     <string name="notifications">Notifications</string>
     <string name="friend_notifications">"Friends' reviews"</string>
     <string name="public_notifications">Public reviews</string>
+    <string name="at_restaurant_notifications">At a restaurant</string>
     <string-array name="notification_types">
         <item>@string/friend_notifications</item>
         <item>@string/public_notifications</item>
+        <item>@string/at_restaurant_notifications</item>
     </string-array>
     <string name="friend_notifications_value">friends</string>
     <string name="public_notifications_value">public</string>
+    <string name="at_restaurant_notifications_value">at_restaurant</string>
     <string-array name="notification_type_values">
         <item>@string/friend_notifications_value</item>
         <item>@string/public_notifications_value</item>
+        <item>@string/at_restaurant_notifications_value</item>
     </string-array>
     <string name="ringtone">Ringtone</string>
     <string name="vibrate">Vibrate</string>
@@ -148,6 +152,7 @@
     <string name="new_public_review">Public review of %s</string>
     <string name="sync_item">• %s\n</string>
     <string name="n_stars">★%d</string>
+    <string name="ignore_restaurant">Ignore restaurant</string>
 
     <!-- config -->
     <string name="autocomplete_types">establishment</string>

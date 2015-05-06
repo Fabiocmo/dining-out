@@ -18,6 +18,7 @@
 package net.sf.diningout.content;
 
 import android.accounts.Account;
+import android.app.PendingIntent;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
@@ -41,13 +42,20 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingRequest;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 
+import net.sf.diningout.R;
 import net.sf.diningout.accounts.Accounts;
 import net.sf.diningout.app.FriendColorService;
 import net.sf.diningout.app.Notifications;
+import net.sf.diningout.app.RestaurantGeofencingEventService;
 import net.sf.diningout.app.RestaurantService;
 import net.sf.diningout.app.RestaurantService.Result;
 import net.sf.diningout.app.RestaurantsRefreshService;
@@ -73,6 +81,7 @@ import net.sf.sprockets.content.Content;
 import net.sf.sprockets.database.Cursors;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.gms.gcm.Gcm;
+import net.sf.sprockets.gms.location.Locations;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.preference.Prefs;
 import net.sf.sprockets.util.StringArrays;
@@ -87,6 +96,9 @@ import static android.content.ContentResolver.SYNC_EXTRAS_MANUAL;
 import static android.content.ContentResolver.SYNC_EXTRAS_UPLOAD;
 import static android.provider.BaseColumns._ID;
 import static android.text.format.DateUtils.DAY_IN_MILLIS;
+import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
+import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
+import static com.google.android.gms.location.LocationServices.GeofencingApi;
 import static com.google.common.base.Charsets.UTF_8;
 import static java.util.Locale.ENGLISH;
 import static net.sf.diningout.data.Review.Type.PRIVATE;
@@ -95,11 +107,13 @@ import static net.sf.diningout.data.Status.DELETED;
 import static net.sf.diningout.data.Sync.Action.INSERT;
 import static net.sf.diningout.data.Sync.Action.UPDATE;
 import static net.sf.diningout.net.Server.BACKOFF_RETRIES;
-import static net.sf.diningout.preference.Keys.ACCOUNT_INITIALISED;
-import static net.sf.diningout.preference.Keys.CLOUD_ID;
-import static net.sf.diningout.preference.Keys.INSTALL_ID;
-import static net.sf.diningout.preference.Keys.LAST_SYNC;
-import static net.sf.diningout.preference.Keys.ONBOARDED;
+import static net.sf.diningout.preference.Keys.App.ACCOUNT_INITIALISED;
+import static net.sf.diningout.preference.Keys.App.APP;
+import static net.sf.diningout.preference.Keys.App.CLOUD_ID;
+import static net.sf.diningout.preference.Keys.App.INSTALL_ID;
+import static net.sf.diningout.preference.Keys.App.LAST_SYNC;
+import static net.sf.diningout.preference.Keys.App.ONBOARDED;
+import static net.sf.diningout.preference.Keys.SHOW_NOTIFICATIONS;
 import static net.sf.diningout.provider.Contract.ACTION_CONTACTS_SYNCED;
 import static net.sf.diningout.provider.Contract.ACTION_CONTACTS_SYNCING;
 import static net.sf.diningout.provider.Contract.ACTION_USER_LOGGED_IN;
@@ -113,6 +127,9 @@ import static net.sf.sprockets.app.SprocketsApplication.cr;
 import static net.sf.sprockets.content.Content.SYNC_EXTRAS_DOWNLOAD;
 import static net.sf.sprockets.gms.analytics.Trackers.event;
 import static net.sf.sprockets.gms.analytics.Trackers.exception;
+import static net.sf.sprockets.gms.location.Geofences.GEOFENCE_RADIUS;
+import static net.sf.sprockets.gms.location.Geofences.GEOFENCE_TRANSITION_ALL;
+import static net.sf.sprockets.gms.location.Geofences.MAX_GEOFENCES;
 import static net.sf.sprockets.sql.SQLite.alias;
 
 /**
@@ -160,13 +177,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             return; // will initialise on first normal sync
         }
         Context context = getContext();
-        SharedPreferences prefs = Prefs.get(context);
+        SharedPreferences prefs = Prefs.get(context, APP);
         try {
             if (!prefs.getBoolean(ACCOUNT_INITIALISED, false)) { // first run, log the user in
                 initUser(context, provider);
             }
             if (extras.getBoolean(SYNC_EXTRAS_CONTACTS_ONLY)) {
-                syncContacts(context, provider);
+                refreshContacts(context, provider);
                 uploadContacts(context, provider);
                 return;
             }
@@ -174,13 +191,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 return; // don't sync yet
             }
             long now = System.currentTimeMillis(); // full upload and download daily
-            boolean dailySync = false;
-            if (extras.containsKey(SYNC_EXTRAS_MANUAL)
-                    || now - prefs.getLong(LAST_SYNC, 0L) >= DAY_IN_MILLIS) {
-                dailySync = true;
+            boolean dailySync = now - prefs.getLong(LAST_SYNC, 0L) >= DAY_IN_MILLIS;
+            if (dailySync || extras.containsKey(SYNC_EXTRAS_MANUAL)) {
                 extras.putBoolean(SYNC_EXTRAS_UPLOAD, true);
                 extras.putBoolean(SYNC_EXTRAS_DOWNLOAD, true);
-                syncContacts(context, provider);
+                refreshContacts(context, provider);
             }
             if (extras.containsKey(SYNC_EXTRAS_UPLOAD)
                     || extras.containsKey(SYNC_EXTRAS_DOWNLOAD)) {
@@ -194,6 +209,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 prefs.edit().putLong(LAST_SYNC, now).apply();
                 if (dailySync) {
                     refreshRestaurants(context, provider);
+                    geofenceRestaurants(context, provider);
                 }
                 Notifications.sync(context);
             }
@@ -224,7 +240,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         intent.putExtra(EXTRA_HAS_RESTAURANTS, init != null && init.restaurants != null);
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
         if (init != null) {
-            Prefs.edit(context).putBoolean(ACCOUNT_INITIALISED, true)
+            Prefs.edit(context, APP).putBoolean(ACCOUNT_INITIALISED, true)
                     .putLong(INSTALL_ID, init.installId).apply();
             if (init.users != null) {
                 ContentValues vals = new ContentValues(5);
@@ -233,7 +249,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
             }
             if (init.restaurants != null) {
-                Prefs.putBoolean(context, ONBOARDED, true);
+                Prefs.putBoolean(context, APP, ONBOARDED, true);
                 for (Restaurant restaurant : init.restaurants) {
                     restaurant.localId = Restaurants.add(restaurant.globalId);
                     if (restaurant.localId > 0) {
@@ -248,7 +264,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
      * Insert new system contacts, delete orphaned app contacts, and synchronise any changes to
      * existing.
      */
-    private void syncContacts(Context context, ContentProviderClient cp) throws RemoteException {
+    private void refreshContacts(Context context, ContentProviderClient cp) throws RemoteException {
         /* get system contacts */
         String[] proj = {Email.ADDRESS, ContactsContract.Contacts.LOOKUP_KEY,
                 RawContacts.CONTACT_ID, ContactsContract.Contacts.DISPLAY_NAME};
@@ -348,7 +364,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private void uploadRestaurants(ContentProviderClient cp) throws RemoteException {
         String[] proj = {_ID, Restaurants.GLOBAL_ID, Restaurants.PLACE_ID, Restaurants.NAME,
                 Restaurants.ADDRESS, Restaurants.INTL_PHONE, Restaurants.URL, Restaurants.NOTES,
-                Restaurants.STATUS_ID, Restaurants.DIRTY, Restaurants.VERSION};
+                Restaurants.GEOFENCE_NOTIFICATIONS, Restaurants.STATUS_ID, Restaurants.DIRTY,
+                Restaurants.VERSION};
         String sel = Restaurants.DIRTY + " = 1";
         List<Restaurant> restaurants = Restaurants.from(cp.query(RESTAURANTS_URI, proj, sel, null,
                 null));
@@ -587,7 +604,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             throws RemoteException {
         int rows = Content.getCount(context, RESTAURANTS_URI);
         int days = 30; // age when restaurants should be refreshed
-        Uri uri = Uris.limit(RESTAURANTS_URI, String.valueOf(rows / days + 1));
+        Uri uri = Uris.limit(RESTAURANTS_URI, rows / days + 1);
         String[] proj = {_ID, Restaurants.PLACE_ID};
         String sel = Restaurants.PLACE_ID + " IS NOT NULL AND "
                 + Restaurants.PLACE_ID + " NOT LIKE 'NOT_FOUND_%' AND ("
@@ -616,6 +633,59 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 }
             }
         }
+    }
+
+    /**
+     * Refresh the list of restaurants that are geofenced.
+     */
+    private void geofenceRestaurants(Context context, ContentProviderClient cp)
+            throws RemoteException {
+        GoogleApiClient client = Locations.client(context);
+        if (client == null) {
+            return;
+        }
+        /* remove existing geofences */
+        PendingIntent intent = PendingIntent.getService(context, 0,
+                new Intent(context, RestaurantGeofencingEventService.class), 0);
+        PendingResult<Status> result = GeofencingApi.removeGeofences(client, intent);
+        Status status = result.await();
+        if (!status.isSuccess()) {
+            String message = status.getStatusMessage();
+            Log.e(TAG, "remove geofences failed: " + message);
+            event("gms", "remove geofences failed", message);
+        }
+        /* add geofences if user wants to be notified */
+        if (!Prefs.getStringSet(context, SHOW_NOTIFICATIONS)
+                .contains(context.getString(R.string.at_restaurant_notifications_value))) {
+            client.disconnect();
+            return;
+        }
+        GeofencingRequest.Builder request = new GeofencingRequest.Builder();
+        Uri uri = Uris.limit(Restaurants.CONTENT_URI, MAX_GEOFENCES);
+        String[] proj = {_ID, Restaurants.LATITUDE, Restaurants.LONGITUDE};
+        String sel = Restaurants.LATITUDE + " IS NOT NULL AND "
+                + Restaurants.LONGITUDE + " IS NOT NULL AND "
+                + Restaurants.GEOFENCE_NOTIFICATIONS + " = 1 AND " + Restaurants.STATUS_ID + " = ?";
+        String[] args = {String.valueOf(ACTIVE.id)};
+        EasyCursor c = new EasyCursor(cp.query(uri, proj, sel, args, _ID + " DESC"));
+        while (c.moveToNext()) {
+            request.addGeofence(new Geofence.Builder().setRequestId(String.valueOf(c.getLong(_ID)))
+                    .setCircularRegion(c.getDouble(Restaurants.LATITUDE),
+                            c.getDouble(Restaurants.LONGITUDE), GEOFENCE_RADIUS)
+                    .setTransitionTypes(GEOFENCE_TRANSITION_ALL)
+                    .setLoiteringDelay(15 * (int) MINUTE_IN_MILLIS)
+                    .setNotificationResponsiveness(15 * (int) MINUTE_IN_MILLIS)
+                    .setExpirationDuration(NEVER_EXPIRE).build());
+        }
+        c.close();
+        result = GeofencingApi.addGeofences(client, request.build(), intent);
+        status = result.await();
+        if (!status.isSuccess()) {
+            String message = status.getStatusMessage();
+            Log.e(TAG, "add geofences failed: " + message);
+            event("gms", "add geofences failed", message);
+        }
+        client.disconnect();
     }
 
     /**

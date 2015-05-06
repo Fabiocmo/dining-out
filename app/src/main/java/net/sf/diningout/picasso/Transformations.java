@@ -17,6 +17,7 @@
 
 package net.sf.diningout.picasso;
 
+import net.sf.diningout.R;
 import net.sf.sprockets.picasso.GradientTransformation;
 
 import jp.wasabeef.picasso.transformations.CropCircleTransformation;
@@ -35,6 +36,6 @@ public class Transformations {
     public static final GradientTransformation TL = new GradientTransformation(context(), BR_TL);
     public static final GradientTransformation BR = new GradientTransformation(context(), TL_BR);
     public static final GradientTransformation LEFT =
-            new GradientTransformation(context(), RIGHT_LEFT);
+            new GradientTransformation(context(), RIGHT_LEFT, R.color.overlay_dark);
     public static final CropCircleTransformation CIRCLE = new CropCircleTransformation();
 }

@@ -10,8 +10,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_toRightOf="@id/navigationDrawer"
-        android:layout_marginLeft="@dimen/padding"
-        android:layout_marginRight="@dimen/padding"
         class="net.sf.diningout.app.ui.RestaurantsFragment"/>
 
     <FrameLayout

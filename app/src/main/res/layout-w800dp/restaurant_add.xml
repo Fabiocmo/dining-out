@@ -10,19 +10,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/navigationDrawer"
-        android:layout_marginLeft="@dimen/cards_pane_margin"
-        android:layout_marginRight="@dimen/cards_pane_margin"
-        android:layout_marginTop="@dimen/cards_parent_margin"
+        android:layout_marginLeft="@dimen/padding"
         class="net.sf.diningout.app.ui.RestaurantAutocompleteFragment"/>
 
     <fragment
         android:id="@+id/nearby"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_toRightOf="@id/navigationDrawer"
         android:layout_below="@id/autocomplete"
-        android:layout_marginLeft="@dimen/padding"
-        android:layout_marginRight="@dimen/padding"
+        android:layout_alignLeft="@id/autocomplete"
         class="net.sf.diningout.app.ui.RestaurantsNearbyFragment"/>
 
 </RelativeLayout>

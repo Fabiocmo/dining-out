@@ -2,7 +2,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
     <style name="Widget.ActionBar" parent="@android:style/Widget.Holo.Light.ActionBar.Solid.Inverse">
-        <item name="android:background">@drawable/ab_background</item>
+        <item name="android:background">@drawable/ab_solid_dark</item>
     </style>
 
     <style name="Widget.ActionBar.DropDownItem" parent="@android:style/Widget.Holo.DropDownItem.Spinner">

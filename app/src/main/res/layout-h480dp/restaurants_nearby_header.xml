@@ -4,8 +4,6 @@
           style="@style/Card.Title.Header"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
-          android:layout_marginLeft="@dimen/cards_parent_margin"
-          android:layout_marginRight="@dimen/cards_parent_margin"
           android:layout_marginTop="@dimen/cards_parent_margin"
           android:background="@drawable/header_card"
           android:text="@string/nearby_title"/>

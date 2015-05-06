@@ -1,16 +1,16 @@
 /*
  * Copyright 2013-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -22,18 +22,13 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.util.Log;
 
-import net.sf.diningout.app.RestaurantService.Result;
 import net.sf.diningout.provider.Contract.Contacts;
 import net.sf.diningout.provider.Contract.Restaurants;
-import net.sf.sprockets.google.Place;
 
-import java.io.IOException;
 import java.util.List;
 
 import static net.sf.sprockets.app.SprocketsApplication.cr;
-import static net.sf.sprockets.gms.analytics.Trackers.exception;
 
 /**
  * Inserts the restaurants, updates their details, downloads their photos, and follows the contacts.
@@ -78,29 +73,9 @@ public class InitService extends IntentService {
             }
         }
         if (restaurantIds != null) { // update restaurant details, insert reviews and photos
-            Place[] places = new Place[restaurantIds.length];
-            long[] photoIds = new long[restaurantIds.length];
-            for (int i = 0; i < restaurantIds.length; i++) { // update details, insert reviews
-                if (restaurantIds[i] > 0) {
-                    try {
-                        Result result =
-                                RestaurantService.details(restaurantIds[i], restaurants.get(i));
-                        places[i] = result.place;
-                        photoIds[i] = result.photoId;
-                    } catch (IOException e) {
-                        Log.e(TAG, "getting place details", e);
-                        exception(e);
-                    }
-                }
-            }
-            for (int i = 0; i < restaurantIds.length; i++) { // download photos
-                if (restaurantIds[i] > 0 && places[i] != null) {
-                    try {
-                        RestaurantService.photo(photoIds[i], restaurantIds[i], places[i]);
-                    } catch (IOException e) {
-                        Log.e(TAG, "downloading restaurant photo", e);
-                        exception(e);
-                    }
+            for (long id : restaurantIds) {
+                if (id > 0) {
+                    RestaurantService.download(id);
                 }
             }
         }

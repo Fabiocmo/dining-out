@@ -239,7 +239,7 @@ public class RestaurantService extends IntentService {
             String sel = RestaurantPhotos.RESTAURANT_ID + " = ?";
             String[] args = {restaurantId};
             result.photoId = Cursors.firstLong(cr.query(
-                    Uris.limit(RestaurantPhotos.CONTENT_URI, "1"), proj, sel, args, _ID));
+                    Uris.limit(RestaurantPhotos.CONTENT_URI, 1), proj, sel, args, _ID));
             if (result.photoId <= 0) {
                 ContentValues[] photoVals = RestaurantPhotos.values(id, result.place);
                 if (photoVals != null) {

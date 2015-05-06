@@ -1,16 +1,16 @@
 /*
  * Copyright 2014-2015 pushbit <pushbit@gmail.com>
- * 
+ *
  * This file is part of Dining Out.
- * 
+ *
  * Dining Out is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * Dining Out is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with Dining Out. If not,
  * see <http://www.gnu.org/licenses/>.
  */
@@ -63,6 +63,7 @@ import net.sf.sprockets.widget.ParallaxViewScrollListener;
 
 import butterknife.InjectView;
 
+import static android.content.Intent.ACTION_INSERT;
 import static android.support.v4.view.ViewPager.SCROLL_STATE_IDLE;
 import static android.view.MotionEvent.ACTION_CANCEL;
 import static android.view.MotionEvent.ACTION_DOWN;
@@ -165,6 +166,7 @@ public class RestaurantActivity extends SprocketsActivity implements OnScrollApp
     public void onViewCreated(AbsListView view) {
         int padding = view.getPaddingTop();
         view.setPadding(padding, Themes.getActionBarSize(this) + padding, padding, padding);
+        view.setClipToPadding(false);
         view.setChoiceMode(CHOICE_MODE_SINGLE);
         ((RestaurantCursorAdapter) view.getAdapter()).setSelectedId(mId);
     }
@@ -252,7 +254,8 @@ public class RestaurantActivity extends SprocketsActivity implements OnScrollApp
             switch (position) {
                 case 0:
                 case 1:
-                    return ReviewsFragment.newInstance(mId, position == 0 ? PRIVATE : GOOGLE);
+                    return ReviewsFragment.newInstance(mId, position == 0 ? PRIVATE : GOOGLE,
+                            ACTION_INSERT.equals(getIntent().getAction()));
                 case 2:
                     return NotesFragment.newInstance(mId);
             }
@@ -415,7 +418,7 @@ public class RestaurantActivity extends SprocketsActivity implements OnScrollApp
             list.setDividerHeight(mDividerHeight);
             list.setOnTouchListener(new TouchListener());
             FadingActionBarScrollListener fade = new FadingActionBarScrollListener(a, true, true, 1)
-                    .setOpaqueOffset(a.mActionBarSize * 2).setOnScrollApprover(a);
+                    .setOpaqueOffset(a.mActionBarSize * 2 + mDividerHeight).setOnScrollApprover(a);
             if (Displays.getSize(a).x > res.getDimensionPixelSize(R.dimen.restaurant_photo_width)) {
                 fade.setMinBackgroundOpacity(Color.alpha(res.getColor(R.color.overlay)));
             }

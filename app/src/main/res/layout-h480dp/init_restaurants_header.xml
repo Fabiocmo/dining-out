@@ -2,10 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:layout_marginLeft="@dimen/cards_parent_margin"
-              android:layout_marginRight="@dimen/cards_parent_margin"
-              android:background="@drawable/card"
-              android:orientation="vertical">
+              android:orientation="vertical"
+              android:background="@drawable/card">
 
     <TextView
         style="@style/Card.Title"
