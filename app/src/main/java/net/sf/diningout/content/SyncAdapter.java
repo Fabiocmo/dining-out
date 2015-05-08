@@ -677,14 +677,16 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     .setNotificationResponsiveness(15 * (int) MINUTE_IN_MILLIS)
                     .setExpirationDuration(NEVER_EXPIRE).build());
         }
-        c.close();
-        result = GeofencingApi.addGeofences(client, request.build(), intent);
-        status = result.await();
-        if (!status.isSuccess()) {
-            String message = status.getStatusMessage();
-            Log.e(TAG, "add geofences failed: " + message);
-            event("gms", "add geofences failed", message);
+        if (c.getCount() > 0) {
+            result = GeofencingApi.addGeofences(client, request.build(), intent);
+            status = result.await();
+            if (!status.isSuccess()) {
+                String message = status.getStatusMessage();
+                Log.e(TAG, "add geofences failed: " + message);
+                event("gms", "add geofences failed", message);
+            }
         }
+        c.close();
         client.disconnect();
     }
 
