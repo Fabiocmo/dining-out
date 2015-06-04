@@ -11,6 +11,7 @@ CREATE TABLE contact (
     android_lookup_key TEXT,
     android_id INTEGER,
     name TEXT COLLATE LOCALIZED,
+    normalised_name TEXT COLLATE LOCALIZED,
     email TEXT,
     email_hash TEXT NOT NULL UNIQUE, -- SHA-512 + base 64
     following INTEGER NOT NULL DEFAULT 0,

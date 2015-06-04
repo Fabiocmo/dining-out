@@ -97,6 +97,7 @@
 
     <!-- friends -->
     <string name="friends_title">Friends</string>
+    <string name="friends_searchable_hint">Search friends</string>
     <string name="friend_photo">Friend photo</string>
     <string name="follow">Follow</string>
     <string name="following">Following</string>
@@ -109,6 +110,7 @@
     <!-- notifications -->
     <string name="notifications_title">Notifications</string>
     <string name="notification_photo">Notification photo</string>
+    <string name="notification_new">NEW</string>
     <string name="notifications_empty_title">None yet</string>
     <string name="notifications_empty_text">Invite friends</string>
 
@@ -132,7 +134,6 @@
         <item>@string/at_restaurant_notifications_value</item>
     </string-array>
     <string name="ringtone">Ringtone</string>
-    <string name="vibrate">Vibrate</string>
     <string name="distance_units">Distance units</string>
     <string name="automatic">Automatic</string>
     <string name="kilometres">Kilometres</string>

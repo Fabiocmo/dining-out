@@ -60,12 +60,10 @@ import net.sf.sprockets.preference.Prefs;
 import net.sf.sprockets.util.StringArrays;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static android.app.Notification.DEFAULT_LIGHTS;
-import static android.app.Notification.DEFAULT_VIBRATE;
-import static android.app.Notification.PRIORITY_LOW;
 import static android.app.PendingIntent.FLAG_CANCEL_CURRENT;
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 import static android.content.Intent.ACTION_EDIT;
@@ -73,9 +71,11 @@ import static android.content.Intent.ACTION_INSERT;
 import static android.content.Intent.ACTION_VIEW;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.net.Uri.EMPTY;
+import static android.provider.BaseColumns._ID;
 import static com.google.android.gms.location.Geofence.GEOFENCE_TRANSITION_DWELL;
 import static com.google.android.gms.location.Geofence.GEOFENCE_TRANSITION_ENTER;
 import static com.google.android.gms.location.Geofence.GEOFENCE_TRANSITION_EXIT;
+import static java.lang.Boolean.FALSE;
 import static net.sf.diningout.app.RequestCodes.UPDATE_GEOFENCE_NOTIFICATIONS;
 import static net.sf.diningout.app.SyncsReadService.EXTRA_ACTIVITIES;
 import static net.sf.diningout.app.ui.RestaurantActivity.EXTRA_ID;
@@ -86,8 +86,9 @@ import static net.sf.diningout.app.ui.RestaurantActivity.TAB_PUBLIC;
 import static net.sf.diningout.data.Review.Type.GOOGLE;
 import static net.sf.diningout.data.Review.Type.PRIVATE;
 import static net.sf.diningout.data.Status.ACTIVE;
+import static net.sf.diningout.preference.Keys.App.APP;
+import static net.sf.diningout.preference.Keys.App.NEW_SYNC_IDS;
 import static net.sf.diningout.preference.Keys.RINGTONE;
-import static net.sf.diningout.preference.Keys.VIBRATE;
 import static net.sf.sprockets.app.ContentService.EXTRA_NOTIFICATION_ID;
 import static net.sf.sprockets.app.ContentService.EXTRA_NOTIFICATION_TAG;
 import static net.sf.sprockets.app.ContentService.EXTRA_VALUES;
@@ -114,18 +115,20 @@ public class Notifications {
      */
     public static void sync(Context context) {
         ContentResolver cr = cr();
-        String[] proj = {Syncs.TYPE_ID, Syncs.OBJECT_ID, millis(Syncs.ACTION_ON)};
+        String[] proj = {_ID, Syncs.TYPE_ID, Syncs.OBJECT_ID, millis(Syncs.ACTION_ON)};
         String sel = Syncs.STATUS_ID + " = ?";
         String[] args = {String.valueOf(ACTIVE.id)};
         String order = Syncs.ACTION_ON + " DESC";
         EasyCursor c = new EasyCursor(cr.query(Syncs.CONTENT_URI, proj, sel, args, order));
-        if (c.getCount() > 0) {
+        int count = c.getCount();
+        if (count > 0) {
             int users = 0;
             int reviews = 0;
             Review review = null; // newest, headlines notification
             Set<CharSequence> lines = new LinkedHashSet<>(); // ignore dupes
             long when = 0L;
             Bitmap icon = null;
+            Set<String> syncIds = new HashSet<>(count);
             /* get the change details */
             while (c.moveToNext()) {
                 Uri photo = null;
@@ -134,6 +137,7 @@ public class Notifications {
                         photo = user(context, cr, c.getLong(Syncs.OBJECT_ID), lines, icon);
                         if (photo != null) {
                             users++;
+                            syncIds.add(String.valueOf(c.getLong(_ID)));
                         }
                         break;
                     case REVIEW:
@@ -142,6 +146,7 @@ public class Notifications {
                         photo = pair.first;
                         if (pair.second != null) {
                             reviews++;
+                            syncIds.add(String.valueOf(c.getLong(_ID)));
                             if (review == null) {
                                 review = pair.second;
                             }
@@ -173,6 +178,7 @@ public class Notifications {
                     activity = new Intent(context, NotificationsActivity.class);
                 }
                 notify(context, lines, bigText, summary, when, icon, users + reviews, activity);
+                Prefs.putStringSet(context, APP, NEW_SYNC_IDS, syncIds);
                 event("notification", "notify", "sync", users + reviews);
             } else { // sync object was deleted
                 Managers.notification(context).cancel(TAG_SYNC, 0);
@@ -256,10 +262,6 @@ public class Notifications {
     private static void notify(Context context, Set<CharSequence> lines, CharSequence bigText,
                                CharSequence summary, long when, Bitmap icon, int totalItems,
                                Intent activity) {
-        int defaults = DEFAULT_LIGHTS;
-        if (Prefs.getBoolean(context, VIBRATE)) {
-            defaults |= DEFAULT_VIBRATE;
-        }
         CharSequence title = lines.iterator().next();
         BigTextStyle style = new BigTextStyle();
         if (lines.size() == 1) {
@@ -285,10 +287,10 @@ public class Notifications {
                         .putExtra(EXTRA_ACTIVITIES, task.getIntents()), FLAG_CANCEL_CURRENT);
         PendingIntent delete = PendingIntent.getService(context, 1,
                 new Intent(context, SyncsReadService.class), FLAG_CANCEL_CURRENT);
-        Builder notif = new Builder(context).setDefaults(defaults).setOnlyAlertOnce(true)
-                .setTicker(title).setContentTitle(title).setStyle(style).setWhen(when)
-                .setLargeIcon(icon).setSmallIcon(R.drawable.stat_logo).setContentIntent(content)
-                .setAutoCancel(true).setDeleteIntent(delete);
+        Builder notif = new Builder(context).setOnlyAlertOnce(true).setTicker(title)
+                .setContentTitle(title).setStyle(style).setWhen(when)
+                .setLargeIcon(icon).setSmallIcon(R.drawable.stat_logo)
+                .setContentIntent(content).setAutoCancel(true).setDeleteIntent(delete);
         String ringtone = Prefs.getString(context, RINGTONE);
         if (!TextUtils.isEmpty(ringtone)) {
             notif.setSound(Uri.parse(ringtone));
@@ -306,6 +308,10 @@ public class Notifications {
     public static void geofence(Context context, int transition, long restaurantId) {
         switch (transition) {
             case GEOFENCE_TRANSITION_ENTER:
+                event("restaurant", "enter");
+                if (Restaurants.isOpen(restaurantId) == FALSE) {
+                    break;
+                }
                 EasyCursor restaurant = restaurant(restaurantId);
                 if (restaurant.moveToFirst()) {
                     String name = restaurant.getString(Restaurants.NAME);
@@ -323,23 +329,26 @@ public class Notifications {
                     }
                     review.close();
                     Bitmap icon = photo(context, RestaurantPhotos.uriForRestaurant(restaurantId));
-                    Notification notif = new Builder(context).setOnlyAlertOnce(true).setTicker(name)
-                            .setContentTitle(name).setStyle(style).setLargeIcon(icon)
-                            .setSmallIcon(R.drawable.stat_logo).setPriority(PRIORITY_LOW)
+                    Notification notif = new Builder(context).setOnlyAlertOnce(true)
+                            .setTicker(name).setContentTitle(name).setStyle(style)
+                            .setLargeIcon(icon).setSmallIcon(R.drawable.stat_logo)
                             .setContentIntent(view(context, restaurantId, false, reviewType))
                             .addAction(R.drawable.ic_action_location_off,
                                     context.getString(R.string.ignore_restaurant),
                                     ignore(context, restaurantId)).build();
                     Managers.notification(context).notify(TAG_GEOFENCE, (int) restaurantId, notif);
-                    event("restaurant", "enter");
                 }
                 restaurant.close();
                 break;
             case GEOFENCE_TRANSITION_DWELL:
-                visiting(restaurantId, true);
                 event("restaurant", "dwell");
+                if (Restaurants.isOpen(restaurantId) == FALSE) {
+                    break;
+                }
+                visiting(restaurantId, true);
                 break;
             case GEOFENCE_TRANSITION_EXIT:
+                event("restaurant", "exit");
                 restaurant = restaurant(restaurantId);
                 if (restaurant.moveToFirst() && restaurant.getInt(Restaurants.VISITING) != 0) {
                     visiting(restaurantId, false);
@@ -351,7 +360,6 @@ public class Notifications {
                                 .setTicker(name).setContentTitle(name)
                                 .setContentText(context.getString(R.string.comments_hint))
                                 .setLargeIcon(icon).setSmallIcon(R.drawable.stat_logo)
-                                .setPriority(PRIORITY_LOW)
                                 .setContentIntent(view(context, restaurantId, true, PRIVATE))
                                 .setAutoCancel(true).addAction(R.drawable.ic_action_location_off,
                                         context.getString(R.string.ignore_restaurant),
@@ -365,7 +373,6 @@ public class Notifications {
                     Managers.notification(context).cancel(TAG_GEOFENCE, (int) restaurantId);
                 }
                 restaurant.close();
-                event("restaurant", "exit");
                 break;
         }
     }

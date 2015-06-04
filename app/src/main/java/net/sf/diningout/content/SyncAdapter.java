@@ -28,7 +28,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SyncResult;
-import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.sqlite.SQLiteConstraintException;
 import android.net.Uri;
@@ -47,6 +46,7 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofenceStatusCodes;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -84,6 +84,7 @@ import net.sf.sprockets.gms.gcm.Gcm;
 import net.sf.sprockets.gms.location.Locations;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.preference.Prefs;
+import net.sf.sprockets.sql.SQLite;
 import net.sf.sprockets.util.StringArrays;
 
 import java.io.IOException;
@@ -106,7 +107,6 @@ import static net.sf.diningout.data.Status.ACTIVE;
 import static net.sf.diningout.data.Status.DELETED;
 import static net.sf.diningout.data.Sync.Action.INSERT;
 import static net.sf.diningout.data.Sync.Action.UPDATE;
-import static net.sf.diningout.net.Server.BACKOFF_RETRIES;
 import static net.sf.diningout.preference.Keys.App.ACCOUNT_INITIALISED;
 import static net.sf.diningout.preference.Keys.App.APP;
 import static net.sf.diningout.preference.Keys.App.CLOUD_ID;
@@ -138,22 +138,27 @@ import static net.sf.sprockets.sql.SQLite.alias;
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String TAG = SyncAdapter.class.getSimpleName();
     private static final String PROJECT_ID = "77419503291"; // from Google Developers Console
+
     /**
      * Contacts content URI specifying that the caller is a sync adapter.
      */
     private static final Uri CONTACTS_URI = Uris.callerIsSyncAdapter(Contacts.CONTENT_URI);
+
     /**
      * Restaurants content URI specifying that the caller is a sync adapter.
      */
     private static final Uri RESTAURANTS_URI = Uris.callerIsSyncAdapter(Restaurants.CONTENT_URI);
+
     /**
      * Reviews content URI specifying that the caller is a sync adapter.
      */
     private static final Uri REVIEWS_URI = Uris.callerIsSyncAdapter(Reviews.CONTENT_URI);
+
     /**
      * Review drafts content URI specifying that the caller is a sync adapter.
      */
     private static final Uri REVIEW_DRAFTS_URI = Uris.callerIsSyncAdapter(ReviewDrafts.CONTENT_URI);
+
     /**
      * Syncs content URI specifying that the caller is a sync adapter.
      */
@@ -243,7 +248,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             Prefs.edit(context, APP).putBoolean(ACCOUNT_INITIALISED, true)
                     .putLong(INSTALL_ID, init.installId).apply();
             if (init.users != null) {
-                ContentValues vals = new ContentValues(5);
+                ContentValues vals = new ContentValues(6);
                 for (User user : init.users) {
                     cp.insert(CONTACTS_URI, Contacts.values(vals, user));
                 }
@@ -278,7 +283,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         sel = Contacts.EMAIL + " IS NOT NULL";
         EasyCursor app = new EasyCursor(cp.query(CONTACTS_URI, proj, sel, null, Contacts.EMAIL));
         /* compare and sync */
-        ContentValues vals = new ContentValues(5);
+        ContentValues vals = new ContentValues();
         for (CursorJoiner.Result result : new CursorJoiner(sys, new String[]{Email.ADDRESS},
                 app, new String[]{Contacts.EMAIL})) {
             switch (result) {
@@ -291,10 +296,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     vals.put(Contacts.ANDROID_LOOKUP_KEY,
                             sys.getString(ContactsContract.Contacts.LOOKUP_KEY));
                     vals.put(Contacts.ANDROID_ID, sys.getLong(RawContacts.CONTACT_ID));
-                    vals.put(Contacts.NAME, sys.getString(ContactsContract.Contacts.DISPLAY_NAME));
+                    String name = sys.getString(ContactsContract.Contacts.DISPLAY_NAME);
+                    vals.put(Contacts.NAME, name);
+                    vals.put(Contacts.NORMALISED_NAME, SQLite.normalise(name));
                     vals.put(Contacts.EMAIL, email);
                     if (id <= 0) {
                         vals.put(Contacts.EMAIL_HASH, hash);
+                        vals.put(Contacts.COLOR, Contacts.defaultColor());
                         id = ContentUris.parseId(cp.insert(CONTACTS_URI, vals));
                     } else {
                         cp.update(ContentUris.withAppendedId(CONTACTS_URI, id), vals, null, null);
@@ -324,6 +332,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     s = sys.getString(ContactsContract.Contacts.DISPLAY_NAME);
                     if (!s.equals(app.getString(Contacts.NAME))) {
                         vals.put(Contacts.NAME, s);
+                        vals.put(Contacts.NORMALISED_NAME, SQLite.normalise(s));
                     }
                     if (app.getInt(Contacts.STATUS_ID) == DELETED.id) {
                         vals.put(Contacts.STATUS_ID, ACTIVE.id);
@@ -614,10 +623,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         String[] args = {String.valueOf(ACTIVE.id)};
         String order = Restaurants.REFRESHED_ON + " IS NULL DESC, " + Restaurants.REFRESHED_ON
                 + ", " + _ID;
-        Cursor c = cp.query(uri, proj, sel, args, order);
+        EasyCursor c = new EasyCursor(cp.query(uri, proj, sel, args, order));
         Result[] results = null;
         try {
-            results = RestaurantsRefreshService.refresh(new EasyCursor(c));
+            results = RestaurantsRefreshService.refresh(c);
         } catch (IOException e) {
             Log.e(TAG, "refreshing restaurants", e);
             exception(e);
@@ -625,10 +634,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         c.close();
         if (results != null) {
             for (Result result : results) {
-                if (result.newReviews != null) {
-                    for (int i = 0; i < result.newReviews.size(); i++) {
+                if (result.newReviewTimes != null) {
+                    for (int i = 0; i < result.newReviewTimes.size(); i++) {
                         cp.insert(SYNCS_URI, Syncs.values(
-                                result.newReviews.keyAt(i), result.newReviews.valueAt(i)));
+                                result.newReviewTimes.keyAt(i), result.newReviewTimes.valueAt(i)));
                     }
                 }
             }
@@ -650,7 +659,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         PendingResult<Status> result = GeofencingApi.removeGeofences(client, intent);
         Status status = result.await();
         if (!status.isSuccess()) {
-            String message = status.getStatusMessage();
+            String message = GeofenceStatusCodes.getStatusCodeString(status.getStatusCode());
             Log.e(TAG, "remove geofences failed: " + message);
             event("gms", "remove geofences failed", message);
         }
@@ -681,7 +690,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             result = GeofencingApi.addGeofences(client, request.build(), intent);
             status = result.await();
             if (!status.isSuccess()) {
-                String message = status.getStatusMessage();
+                String message = GeofenceStatusCodes.getStatusCodeString(status.getStatusCode());
                 Log.e(TAG, "add geofences failed: " + message);
                 event("gms", "add geofences failed", message);
             }
@@ -696,7 +705,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
      * @return null if the cloud ID could not be retrieved or sent to the server successfully
      */
     private String uploadCloudId(Context context) {
-        for (int i = 0; i < BACKOFF_RETRIES; i++) {
+        int retries = 5;
+        for (int i = 0; i < retries; i++) {
             try {
                 String id = GoogleCloudMessaging.getInstance(context).register(PROJECT_ID);
                 Boolean synced = Server.syncCloudId(id);
@@ -707,11 +717,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 Log.e(TAG, "registering with GCM", e);
                 exception(e);
             }
-            if (i + 1 < BACKOFF_RETRIES) {
+            if (i + 1 < retries) {
                 SystemClock.sleep((1 << i) * 1000); // wait and retry, register can error
                 event("gcm", "register retry", i + 1);
             } else {
-                event("gcm", "couldn't register after retries", BACKOFF_RETRIES);
+                event("gcm", "couldn't register after retries", retries);
             }
         }
         return null;

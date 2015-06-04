@@ -62,15 +62,18 @@ public class FriendColorService extends IntentService {
         super(TAG);
     }
 
-
     @Override
     protected void onHandleIntent(Intent intent) {
         long id = intent.getLongExtra(EXTRA_ID, 0L);
-        Uri uri = id > 0 ? ContentUris.withAppendedId(Contacts.CONTENT_URI, id)
-                : Contacts.CONTENT_URI;
+        Uri uri = ContentUris.withAppendedId(Contacts.CONTENT_URI, id);
         String[] proj = {_ID, Contacts.ANDROID_LOOKUP_KEY, Contacts.ANDROID_ID};
-        String sel = Contacts.COLOR + " IS NULL AND " + Contacts.STATUS_ID + " = ?";
-        String[] args = {String.valueOf(ACTIVE.id)};
+        String sel = null;
+        String[] args = null;
+        if (id <= 0) {
+            uri = Contacts.CONTENT_URI;
+            sel = Contacts.COLOR + " IS NULL AND " + Contacts.STATUS_ID + " = ?";
+            args = new String[]{String.valueOf(ACTIVE.id)};
+        }
         EasyCursor c = new EasyCursor(cr().query(uri, proj, sel, args, null));
         while (c.moveToNext()) {
             SystemClock.sleep(DELAY);

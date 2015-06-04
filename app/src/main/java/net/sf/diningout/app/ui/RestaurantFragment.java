@@ -26,9 +26,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
-import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -43,7 +41,6 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.widget.AdapterView;
-import android.widget.BaseAdapter;
 import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -60,10 +57,8 @@ import com.squareup.picasso.RequestCreator;
 import net.sf.diningout.R;
 import net.sf.diningout.app.RestaurantGeocodeService;
 import net.sf.diningout.app.RestaurantService;
-import net.sf.diningout.data.OpenHour.Type;
 import net.sf.diningout.picasso.Placeholders;
 import net.sf.diningout.provider.Contract.OpenDays;
-import net.sf.diningout.provider.Contract.OpenHours;
 import net.sf.diningout.provider.Contract.RestaurantPhotos;
 import net.sf.diningout.provider.Contract.Restaurants;
 import net.sf.sprockets.app.ContentService;
@@ -75,7 +70,6 @@ import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.google.Place.Prediction;
 import net.sf.sprockets.lang.Maths;
 import net.sf.sprockets.lang.Substring;
-import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.net.Urls;
 import net.sf.sprockets.view.TextViewHolder;
 import net.sf.sprockets.view.ViewHolder;
@@ -86,12 +80,12 @@ import net.sf.sprockets.widget.ResourceEasyCursorAdapter;
 
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
 import butterknife.Optional;
-import icepick.Icicle;
 
 import static android.content.Intent.ACTION_DIAL;
 import static android.content.Intent.ACTION_EDIT;
@@ -103,12 +97,10 @@ import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP;
 import static android.provider.BaseColumns._ID;
 import static android.text.Spanned.SPAN_INCLUSIVE_INCLUSIVE;
 import static butterknife.ButterKnife.findById;
+import static java.lang.Boolean.TRUE;
 import static java.util.Calendar.DAY_OF_WEEK;
-import static java.util.Calendar.HOUR_OF_DAY;
-import static java.util.Calendar.MINUTE;
 import static net.sf.diningout.app.ui.RestaurantActivity.EXTRA_ID;
 import static net.sf.diningout.app.ui.RestaurantsActivity.EXTRA_DELETE_ID;
-import static net.sf.diningout.data.OpenHour.Type.OPEN;
 import static net.sf.diningout.picasso.Transformations.LEFT;
 import static net.sf.sprockets.app.ContentService.EXTRA_VALUES;
 import static net.sf.sprockets.app.SprocketsApplication.cr;
@@ -124,7 +116,6 @@ import static net.sf.sprockets.view.animation.Interpolators.OVERSHOOT;
 public class RestaurantFragment extends SprocketsFragment implements LoaderCallbacks<EasyCursor> {
     private static final int LOAD_DETAILS = 0;
     private static final int LOAD_HOURS = 1;
-    private static final int LOAD_DAYS = 2;
 
     @InjectView(R.id.photo)
     ImageView mPhoto;
@@ -156,8 +147,6 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
     @InjectView(R.id.edit_website_stub)
     ViewStub mEditWebsiteStub;
 
-    @Icicle
-    int mDayOfWeek = -1;
     private long mId;
     private String mPlaceId;
     private String mGoogleUrl;
@@ -176,7 +165,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
     private boolean mWantsNotif;
     private final Intent mShare = new Intent(ACTION_SEND).setType("text/plain");
     private boolean mPhotoLoaded;
-    private boolean mIsOpen;
+    private Boolean mIsOpen;
 
     @Override
     public void onAttach(Activity activity) {
@@ -209,36 +198,30 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
         LoaderManager manager = getLoaderManager();
         manager.initLoader(LOAD_DETAILS, null, this);
         manager.initLoader(LOAD_HOURS, null, this);
-        manager.initLoader(LOAD_DAYS, null, this);
     }
 
     @Override
     public Loader<EasyCursor> onCreateLoader(int id, Bundle args) {
-        Query q = new Query();
         switch (id) {
             case LOAD_DETAILS:
-                q.uri(ContentUris.withAppendedId(Restaurants.CONTENT_URI, mId));
-                q.proj(Restaurants.PLACE_ID, Restaurants.GOOGLE_URL, Restaurants.NAME,
+                Uri uri = ContentUris.withAppendedId(Restaurants.CONTENT_URI, mId);
+                String[] proj = {Restaurants.PLACE_ID, Restaurants.GOOGLE_URL, Restaurants.NAME,
                         Restaurants.ADDRESS, Restaurants.VICINITY, Restaurants.LATITUDE,
                         Restaurants.LONGITUDE, Restaurants.INTL_PHONE, Restaurants.LOCAL_PHONE,
-                        Restaurants.URL, Restaurants.COLOR, Restaurants.GEOFENCE_NOTIFICATIONS);
-                break;
+                        Restaurants.URL, Restaurants.COLOR, Restaurants.GEOFENCE_NOTIFICATIONS};
+                return new EasyCursorLoader(a, uri, proj, null, null, null);
             case LOAD_HOURS:
-                Calendar cal = Calendar.getInstance();
-                mDayOfWeek = Maths.rollover(cal.get(DAY_OF_WEEK) - 2, 0, 6); // from Sun=1 to Mon=0
-                int time = cal.get(HOUR_OF_DAY) * 100 + cal.get(MINUTE);
-                q.uri(Uris.limit(OpenHours.CONTENT_URI, 1)).proj(OpenHours.TYPE_ID)
-                        .sel(OpenHours.RESTAURANT_ID + " = ? AND ("
-                                + OpenHours.DAY + " = ? AND " + OpenHours.TIME + " <= ? OR "
-                                + OpenHours.DAY + " < ?)").args(mId, mDayOfWeek, time, mDayOfWeek)
-                        .order(OpenHours.DAY + " DESC, " + OpenHours.TIME + " DESC");
-                break;
-            case LOAD_DAYS:
-                q.uri(OpenDays.CONTENT_URI).proj(OpenDays.DAY + " AS " + _ID, OpenDays.HOURS)
-                        .sel(OpenDays.RESTAURANT_ID + " = ?").args(mId).order(OpenDays.DAY);
-                break;
+                Query q = new Query().uri(OpenDays.CONTENT_URI);
+                q.proj(OpenDays.DAY + " AS " + _ID, OpenDays.HOURS);
+                q.sel(OpenDays.RESTAURANT_ID + " = ?").args(mId).order(OpenDays.DAY);
+                return new EasyCursorLoader(a, q).tagWith(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return Restaurants.isOpen(mId);
+                    }
+                });
         }
-        return new EasyCursorLoader(a, q);
+        return null;
     }
 
     @Override
@@ -316,27 +299,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
                 }
                 break;
             case LOAD_HOURS:
-                if (!hoursLoaded(c)) { // get last open or close event from last week
-                    new AsyncTask<Void, Void, Cursor>() {
-                        @Override
-                        protected Cursor doInBackground(Void... params) {
-                            String[] proj = {OpenHours.TYPE_ID};
-                            String sel = OpenHours.RESTAURANT_ID + " = ?";
-                            String[] args = {String.valueOf(mId)};
-                            return cr().query(Uris.limit(OpenHours.CONTENT_URI, 1), proj, sel, args,
-                                    OpenHours.DAY + " DESC, " + OpenHours.TIME + " DESC");
-                        }
-
-                        @Override
-                        protected void onPostExecute(Cursor c) {
-                            super.onPostExecute(c);
-                            hoursLoaded(new EasyCursor(c));
-                            c.close();
-                        }
-                    }.execute();
-                }
-                break;
-            case LOAD_DAYS:
+                mIsOpen = c.getTag();
                 if (mHours != null) {
                     ((CursorAdapter) mHours.getAdapter()).swapCursor(c);
                     int count = c.getCount();
@@ -349,20 +312,6 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
                 }
                 break;
         }
-    }
-
-    /**
-     * True if the last open or close event has been loaded.
-     */
-    private boolean hoursLoaded(EasyCursor c) {
-        if (c.moveToFirst()) {
-            mIsOpen = Type.get(c.getInt(OpenHours.TYPE_ID)) == OPEN;
-            if (mHours != null) {
-                ((BaseAdapter) mHours.getAdapter()).notifyDataSetChanged();
-            }
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -554,7 +503,6 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
         LoaderManager manager = getLoaderManager();
         manager.restartLoader(LOAD_DETAILS, null, this);
         manager.restartLoader(LOAD_HOURS, null, this);
-        manager.restartLoader(LOAD_DAYS, null, this);
         /* dismiss edit fields if showing */
         if (mEditAddressGroup != null && mEditAddressGroup.getTranslationX() == 0.0f) {
             dismissEditGroup(R.id.save_address, false);
@@ -569,7 +517,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
 
     @Override
     public void onLoaderReset(Loader<EasyCursor> loader) {
-        if (loader.getId() == LOAD_DAYS && mHours != null) {
+        if (loader.getId() == LOAD_HOURS && mHours != null) {
             ((CursorAdapter) mHours.getAdapter()).swapCursor(null);
         }
     }
@@ -585,6 +533,8 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
      */
     private class HoursAdapter extends ResourceEasyCursorAdapter {
         private final ClickListener mListener = new ClickListener();
+        private final int mDayOfWeek = // from Sun=1 to Mon=0
+                Maths.rollover(Calendar.getInstance().get(DAY_OF_WEEK) - 2, 0, 6);
 
         private HoursAdapter() {
             super(a, R.layout.hours_item, null, 0);
@@ -594,7 +544,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             TextView view = (TextView) super.getView(position, convertView, parent);
-            view.setText(mIsOpen ? R.string.open : R.string.closed);
+            view.setText(mIsOpen == TRUE ? R.string.open : R.string.closed);
             view.setTextAppearance(a, R.style.Cell_Title);
             view.setOnClickListener(mListener);
             return view;

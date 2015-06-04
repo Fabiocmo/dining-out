@@ -1,5 +1,6 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="net.sf.diningout">
+<manifest
+    package="net.sf.diningout"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -19,12 +20,12 @@
 
     <application
         android:name=".app.AppApplication"
+        android:allowBackup="true"
+        android:backupAgent="net.sf.sprockets.app.backup.DefaultSharedPreferencesBackupAgent"
         android:icon="@drawable/icon"
         android:label="@string/app_name"
-        android:theme="@style/Theme"
         android:logo="@drawable/logo"
-        android:allowBackup="true"
-        android:backupAgent="net.sf.sprockets.app.backup.DefaultSharedPreferencesBackupAgent">
+        android:theme="@style/Theme">
 
         <activity
             android:name=".app.ui.MainActivity"
@@ -62,7 +63,15 @@
         <activity
             android:name=".app.ui.FriendsActivity"
             android:label="@string/friends_title"
-            android:parentActivityName=".app.ui.RestaurantsActivity"/>
+            android:launchMode="singleTop"
+            android:parentActivityName=".app.ui.RestaurantsActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/friends_searchable"/>
+        </activity>
         <activity
             android:name=".app.ui.NotificationsActivity"
             android:label="@string/notifications_title"
@@ -85,6 +94,7 @@
         <service android:name=".app.RestaurantsRefreshService"/>
         <service android:name=".app.ReviewsService"/>
         <service android:name=".app.FriendColorService"/>
+        <service android:name=".app.ContactNormalisedNameService"/>
         <service android:name=".app.SyncsReadService"/>
         <service android:name=".app.SyncService">
             <intent-filter>
@@ -113,8 +123,8 @@
         <provider
             android:name=".content.AppContentProvider"
             android:authorities="net.sf.diningout"
-            android:syncable="true"
-            android:exported="false"/>
+            android:exported="false"
+            android:syncable="true"/>
 
         <meta-data
             android:name="com.google.android.backup.api_key"

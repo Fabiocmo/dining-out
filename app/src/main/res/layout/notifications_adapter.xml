@@ -1,26 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
-             android:layout_height="@dimen/notification_card_height">
+    xmlns:simple="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/notification_card_height">
 
-    <ImageView
+    <net.wujingchao.android.view.SimpleTagImageView
         android:id="@+id/photo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:contentDescription="@string/notification_photo"/>
+        android:contentDescription="@string/notification_photo"
+        simple:simple_corner_distance="@dimen/tag_corner_distance"
+        simple:simple_tag_background_color="@color/list_activated"
+        simple:simple_tag_enable="false"
+        simple:simple_tag_orientation="right_bottom"
+        simple:simple_tag_text="@string/notification_new"
+        simple:simple_tag_textSize="@dimen/text_small" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="@dimen/padding_large"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="@dimen/padding_large">
 
         <TextView
             android:id="@+id/action"
             style="@style/Cell.Title.Sentence"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:maxLines="3"/>
+            android:maxLines="3" />
 
         <TextView
             android:id="@+id/time"
@@ -29,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/padding_tiny"
             android:drawableLeft="@drawable/ic_action_time_small"
-            android:gravity="center_vertical"/>
+            android:gravity="center_vertical" />
 
     </LinearLayout>
 </FrameLayout>

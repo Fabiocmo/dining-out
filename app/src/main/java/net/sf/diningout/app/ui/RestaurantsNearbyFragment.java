@@ -82,6 +82,7 @@ public class RestaurantsNearbyFragment extends SprocketsFragment
 
     @Icicle
     String mSearch;
+
     private TextView mEmpty;
     private RestaurantPlacesAdapter mAdapter;
     private Predicate<Place> mFilter;

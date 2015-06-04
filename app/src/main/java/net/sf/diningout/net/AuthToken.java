@@ -29,7 +29,6 @@ import net.sf.sprockets.preference.Prefs;
 
 import java.io.IOException;
 
-import static net.sf.diningout.net.Server.BACKOFF_RETRIES;
 import static net.sf.diningout.preference.Keys.App.ACCOUNT_NAME;
 import static net.sf.diningout.preference.Keys.App.APP;
 import static net.sf.sprockets.app.SprocketsApplication.context;
@@ -42,6 +41,7 @@ import static net.sf.sprockets.gms.analytics.Trackers.exception;
  */
 public class AuthToken {
     private static final String TAG = AuthToken.class.getSimpleName();
+    private static final int BACKOFF_RETRIES = 5;
     private static final String SCOPE =
             "audience:server:client_id:77419503291.apps.googleusercontent.com";
     private static String sToken;

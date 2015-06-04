@@ -36,9 +36,9 @@ import static net.sf.sprockets.app.SprocketsApplication.res;
  * Provides Drawables for placeholders.
  */
 public class Placeholders {
-    private static final IShapeBuilder sRectBuilder = TextDrawable.builder()
+    private static final IShapeBuilder sRect = TextDrawable.builder()
             .beginConfig().textColor(res().getColor(R.color.placeholder_text)).endConfig();
-    private static final IShapeBuilder sRoundBuilder = TextDrawable.builder();
+    private static final IShapeBuilder sRound = TextDrawable.builder();
 
     private Placeholders() {
     }
@@ -61,13 +61,12 @@ public class Placeholders {
     }
 
     /**
-     * Write the first letter of the text in the centre of the view's ColorDrawable.
+     * Get a placeholder with the cursor's {@link Columns#COLOR color} and the first letter of the
+     * text.
      */
-    public static void rect(ImageView view, String text) {
-        if (text.length() > 0) {
-            view.setImageDrawable(sRectBuilder.buildRect(text.substring(0, 1),
-                    ((ColorDrawable) view.getDrawable()).getColor()));
-        }
+    public static Drawable rect(EasyCursor c, String text) {
+        return text.length() > 0 ? sRect.buildRect(text.substring(0, 1), c.getInt(Columns.COLOR))
+                : rect(c);
     }
 
     /**
@@ -92,7 +91,7 @@ public class Placeholders {
      */
     public static void round(ImageView view, String text) {
         if (text.length() > 0) {
-            view.setImageDrawable(sRoundBuilder.buildRound(text.substring(0, 1),
+            view.setImageDrawable(sRound.buildRound(text.substring(0, 1),
                     ((ShapeDrawable) view.getDrawable()).getPaint().getColor()));
         }
     }

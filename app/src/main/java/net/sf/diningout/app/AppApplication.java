@@ -106,6 +106,9 @@ public class AppApplication extends VersionedApplication {
         if (oldCode < 109) {
             startService(new Intent(this, RestaurantsRefreshService.class));
         }
+        if (oldCode < 112) {
+            startService(new Intent(this, ContactNormalisedNameService.class));
+        }
     }
 
     /**

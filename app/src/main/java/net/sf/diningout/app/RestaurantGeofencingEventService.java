@@ -94,9 +94,9 @@ public class RestaurantGeofencingEventService extends IntentService {
                 PendingResult<Status> result = GeofencingApi.removeGeofences(client, removeIds);
                 Status status = result.await();
                 if (!status.isSuccess()) {
-                    String message = status.getStatusMessage();
-                    Log.e(TAG, "remove geofences failed: " + message);
-                    event("gms", "remove geofences failed", message);
+                    String msg = GeofenceStatusCodes.getStatusCodeString(status.getStatusCode());
+                    Log.e(TAG, "remove geofences failed: " + msg);
+                    event("gms", "remove geofences failed", msg);
                 }
                 client.disconnect();
             }

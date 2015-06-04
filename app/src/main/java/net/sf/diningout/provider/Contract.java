@@ -17,6 +17,7 @@
 
 package net.sf.diningout.provider;
 
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -33,7 +34,6 @@ import net.sf.diningout.app.RestaurantGeocodeService;
 import net.sf.diningout.data.OpenHour;
 import net.sf.diningout.data.Restaurant;
 import net.sf.diningout.data.Review;
-import net.sf.diningout.data.Review.Type;
 import net.sf.diningout.data.Status;
 import net.sf.diningout.data.Sync;
 import net.sf.diningout.data.Sync.Action;
@@ -50,6 +50,8 @@ import net.sf.sprockets.google.Places.Field;
 import net.sf.sprockets.google.Places.Params;
 import net.sf.sprockets.google.StreetView;
 import net.sf.sprockets.graphics.Colors;
+import net.sf.sprockets.lang.Maths;
+import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.preference.Prefs;
 import net.sf.sprockets.sql.SQLite;
 import net.sf.sprockets.time.DayOfWeek;
@@ -64,12 +66,16 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import static android.content.ContentResolver.CURSOR_DIR_BASE_TYPE;
 import static android.content.ContentResolver.CURSOR_ITEM_BASE_TYPE;
 import static java.io.File.separator;
 import static java.lang.Double.NEGATIVE_INFINITY;
+import static java.util.Calendar.DAY_OF_WEEK;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MINUTE;
 import static net.sf.diningout.data.OpenHour.Type.CLOSE;
 import static net.sf.diningout.data.OpenHour.Type.OPEN;
 import static net.sf.diningout.data.Review.Type.GOOGLE;
@@ -282,6 +288,11 @@ public class Contract {
         String NAME = "name";
 
         /**
+         * Upper case name without diacritics.
+         */
+        String NORMALISED_NAME = "normalised_name";
+
+        /**
          * Null if the user is only on the server.
          */
         String EMAIL = "email";
@@ -329,21 +340,29 @@ public class Contract {
         }
 
         /**
+         * Get a color to use when adding a contact.
+         */
+        public static int defaultColor() {
+            return Colors.dark();
+        }
+
+        /**
          * Get values from the user.
          */
         public static ContentValues values(User user) {
-            return values(new ContentValues(5), user);
+            return values(new ContentValues(6), user);
         }
 
         /**
          * Put values from the user.
          *
-         * @param vals should have a size of 5 or greater
+         * @param vals should have a size of 6 or greater
          */
         public static ContentValues values(ContentValues vals, User user) {
             vals.put(GLOBAL_ID, user.globalId);
             vals.put(EMAIL_HASH, user.emailHash);
             vals.put(FOLLOWING, user.isFollowing ? 1 : 0);
+            vals.put(COLOR, defaultColor());
             vals.put(STATUS_ID, user.status.id);
             vals.put(DIRTY, 0);
             return vals;
@@ -769,6 +788,32 @@ public class Contract {
         }
 
         /**
+         * Null if unknown.
+         */
+        public static Boolean isOpen(long id) {
+            Calendar cal = Calendar.getInstance();
+            int day = Maths.rollover(cal.get(DAY_OF_WEEK) - 2, 0, 6); // from Sun=1 to Mon=0
+            int time = cal.get(HOUR_OF_DAY) * 100 + cal.get(MINUTE);
+            /* get last open or close event */
+            ContentResolver cr = cr();
+            Uri uri = Uris.limit(OpenHours.CONTENT_URI, 1);
+            String[] proj = {OpenHours.TYPE_ID};
+            String sel = OpenHours.RESTAURANT_ID + " = ? AND (" + OpenHours.DAY + " = ? AND "
+                    + OpenHours.TIME + " <= ? OR " + OpenHours.DAY + " < ?)";
+            String[] args = StringArrays.from(id, day, time, day);
+            String order = OpenHours.DAY + " DESC, " + OpenHours.TIME + " DESC";
+            int type = Cursors.firstInt(cr.query(uri, proj, sel, args, order));
+            if (type != Integer.MIN_VALUE) {
+                return OpenHour.Type.get(type) == OPEN;
+            } else { // from last week
+                sel = OpenHours.RESTAURANT_ID + " = ?";
+                args = new String[]{String.valueOf(id)};
+                type = Cursors.firstInt(cr.query(uri, proj, sel, args, order));
+                return type != Integer.MIN_VALUE ? OpenHour.Type.get(type) == OPEN : null;
+            }
+        }
+
+        /**
          * Get a {@link #DISTANCE} result column that returns the squared distance (in km or mi,
          * depending on user setting) from the location to a restaurant.
          */
@@ -1167,26 +1212,37 @@ public class Contract {
             int size = reviews != null ? reviews.size() : 0;
             for (int i = 0; i < vals.length; i++) {
                 if (i < size) {
-                    Place.Review review = reviews.get(i);
-                    String text = review.getText();
-                    if (!TextUtils.isEmpty(text)) {
-                        if (vals[i] == null) {
-                            vals[i] = new ContentValues(7);
-                        }
-                        vals[i].put(RESTAURANT_ID, restaurantId);
-                        vals[i].put(TYPE_ID, GOOGLE.id);
-                        vals[i].put(AUTHOR_NAME, review.getAuthorName());
-                        vals[i].put(COMMENTS, text);
-                        int rating = review.getRating();
-                        vals[i].put(RATING, rating > 0 ? rating : null);
-                        vals[i].put(WRITTEN_ON, SQLite.datetime(review.getTime() * 1000));
-                        vals[i].put(DIRTY, 0); // not synced to server
-                    } else if (vals[i] != null) {
-                        vals[i].clear();
+                    if (vals[i] == null) {
+                        vals[i] = new ContentValues(7);
                     }
+                    values(vals[i], restaurantId, reviews.get(i));
                 } else if (vals[i] != null) {
                     vals[i].clear();
                 }
+            }
+            return vals;
+        }
+
+        /**
+         * Put values from the review.
+         *
+         * @param vals should have a size of 7 or greater
+         * @return empty if the review does not have text
+         */
+        public static ContentValues values(ContentValues vals, long restaurantId,
+                                           Place.Review review) {
+            String text = review.getText();
+            if (!TextUtils.isEmpty(text)) {
+                vals.put(RESTAURANT_ID, restaurantId);
+                vals.put(TYPE_ID, GOOGLE.id);
+                vals.put(AUTHOR_NAME, review.getAuthorName());
+                vals.put(COMMENTS, text);
+                int rating = review.getRating();
+                vals.put(RATING, rating > 0 ? rating : null);
+                vals.put(WRITTEN_ON, SQLite.datetime(review.getTime() * 1000));
+                vals.put(DIRTY, 0); // not synced to server
+            } else {
+                vals.clear();
             }
             return vals;
         }
@@ -1259,7 +1315,7 @@ public class Contract {
             }
             col = c.getColumnIndex(TYPE_ID);
             if (col >= 0) {
-                review.type = Type.get(c.getInt(col));
+                review.type = Review.Type.get(c.getInt(col));
             }
             col = c.getColumnIndex(CONTACT_ID);
             if (col >= 0) {
@@ -1521,14 +1577,14 @@ public class Contract {
         }
 
         /**
-         * Get values from the inserted Google Place review.
+         * Get values from the new public review.
          */
-        public static ContentValues values(long id, ContentValues review) {
+        public static ContentValues values(long id, String time) {
             ContentValues vals = new ContentValues(5);
             vals.put(TYPE_ID, REVIEW.id);
             vals.put(OBJECT_ID, id);
             vals.put(ACTION_ID, INSERT.id);
-            vals.put(ACTION_ON, review.getAsString(Reviews.WRITTEN_ON));
+            vals.put(ACTION_ON, time);
             if (!Prefs.getStringSet(context(), SHOW_NOTIFICATIONS)
                     .contains(context().getString(R.string.public_notifications_value))) {
                 vals.put(STATUS_ID, INACTIVE.id);

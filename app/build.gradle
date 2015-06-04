@@ -4,8 +4,8 @@ android {
     compileSdkVersion 22
     buildToolsVersion '22.0.1'
     defaultConfig {
-        versionCode 111
-        versionName '1.7.1'
+        versionCode 112
+        versionName '1.8.0'
         minSdkVersion 16
         targetSdkVersion 22
         proguardFiles getDefaultProguardFile('proguard-android.txt'),
@@ -50,7 +50,8 @@ dependencies {
     compile 'com.cocosw:undobar:1.8.1'
     compile 'com.github.castorflex.smoothprogressbar:library:1.1.0'
     compile 'commons-dbutils:commons-dbutils:1.6'
-    compile 'in.srain.cube:grid-view-with-header-footer:1.0.11'
+    compile 'in.srain.cube:grid-view-with-header-footer:1.0.12'
     compile 'jp.co.cyberagent.android.gpuimage:gpuimage-library:1.2.3'
     compile 'jp.wasabeef:picasso-transformations:1.0.4'
+    compile 'net.wujingchao.android.view:simple-tag-imageview:1.0.1'
 }

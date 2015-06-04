@@ -49,11 +49,6 @@ public class Keys {
      */
     public static final String SHOW_NOTIFICATIONS = "show_notifications";
 
-    /**
-     * True if notifications should cause vibration.
-     */
-    public static final String VIBRATE = "vibrate";
-
     private Keys() {
     }
 
@@ -116,6 +111,11 @@ public class Keys {
          * True if the navigation drawer has been opened at least once.
          */
         public static final String NAVIGATION_DRAWER_OPENED = "navigation_drawer_opened";
+
+        /**
+         * Most recently posted sync notification items.
+         */
+        public static final String NEW_SYNC_IDS = "new_sync_ids";
 
         /**
          * True if the user has completed the onboarding process.

@@ -58,11 +58,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.List;
 
 import static android.provider.BaseColumns._ID;
 import static net.sf.diningout.data.Review.Type.GOOGLE;
 import static net.sf.diningout.data.Status.ACTIVE;
+import static net.sf.diningout.data.Status.DELETED;
 import static net.sf.diningout.provider.Contract.AUTHORITY_URI;
 import static net.sf.diningout.provider.Contract.CALL_UPDATE_RESTAURANT_LAST_VISIT;
 import static net.sf.diningout.provider.Contract.CALL_UPDATE_RESTAURANT_RATING;
@@ -73,7 +75,6 @@ import static net.sf.sprockets.gms.analytics.Trackers.event;
 import static net.sf.sprockets.gms.analytics.Trackers.exception;
 import static net.sf.sprockets.google.Places.Response.Status.NOT_FOUND;
 import static net.sf.sprockets.google.Places.Response.Status.OK;
-import static net.sf.sprockets.google.Places.Response.Status.ZERO_RESULTS;
 import static net.sf.sprockets.io.MoreFiles.DOT_PART;
 
 /**
@@ -124,6 +125,9 @@ public class RestaurantService extends IntentService {
                 ContentValues vals = new ContentValues(14);
                 vals.put(Restaurants.PLACE_ID, restaurant.placeId);
                 result = details(id, vals);
+                if (result.status == NOT_FOUND) {
+                    return result;
+                }
                 if (result.place != null) {
                     photo(result.photoId, id, result.place);
                 }
@@ -185,17 +189,17 @@ public class RestaurantService extends IntentService {
      */
     static Result details(long id, ContentValues vals) throws IOException {
         Result result = new Result();
+        String restaurantId = String.valueOf(id);
         String placeId = vals.getAsString(Restaurants.PLACE_ID);
         if (placeId.startsWith("NOT_FOUND_")) {
             return result;
         }
-        String restaurantId = String.valueOf(id);
         ContentResolver cr = cr();
         Response<Place> resp =
                 Places.details(new Params().placeId(placeId), Restaurants.detailsFields());
-        Status status = resp.getStatus();
+        result.status = resp.getStatus();
         result.place = resp.getResult();
-        if (status == OK && result.place != null) {
+        if (result.status == OK && result.place != null) {
             try { // while place_id has UNIQUE constraint
                 cr.update(ContentUris.withAppendedId(Restaurants.CONTENT_URI, id),
                         Restaurants.values(vals, result.place), null, null);
@@ -203,20 +207,27 @@ public class RestaurantService extends IntentService {
                 Log.e(TAG, "updating restaurant from Place details", e);
                 exception(e);
             }
-            /* update reviews */
-            ContentValues[] reviewVals = Reviews.values(id, result.place);
-            if (reviewVals != null) {
-                String sel = Reviews.RESTAURANT_ID + " = ? AND " + Reviews.TYPE_ID + " = ? AND "
-                        + Reviews.WRITTEN_ON + " = ?";
-                String[] args = {restaurantId, String.valueOf(GOOGLE.id), null};
-                for (ContentValues reviewVal : reviewVals) {
-                    if (reviewVal != null) { // could be if review doesn't have comments
-                        args[2] = reviewVal.getAsString(Reviews.WRITTEN_ON);
-                        if (cr.update(Reviews.CONTENT_URI, reviewVal, sel, args) == 0) {
-                            Uri uri = cr.insert(Reviews.CONTENT_URI, reviewVal);
-                            long reviewId = ContentUris.parseId(uri);
-                            if (reviewId > 0) {
-                                result.addReview(reviewId, reviewVal);
+            /* insert/update reviews */
+            List<Place.Review> reviews = result.place.getReviews();
+            if (reviews != null) {
+                Uri uri = Reviews.CONTENT_URI;
+                /* get time of latest review */
+                String[] proj = {SQLite.millis("max", Reviews.WRITTEN_ON)};
+                String sel = Reviews.RESTAURANT_ID + " = ? AND " + Reviews.TYPE_ID + " = ?";
+                String[] args = {restaurantId, String.valueOf(GOOGLE.id)};
+                long latest = Cursors.firstLong(cr.query(uri, proj, sel, args, null));
+                /* insert/update reviews */
+                ContentValues reviewVals = new ContentValues();
+                sel += " AND " + Reviews.WRITTEN_ON + " = ?";
+                args = Arrays.copyOf(args, 3);
+                for (Place.Review review : reviews) {
+                    Reviews.values(reviewVals, id, review);
+                    if (reviewVals.size() > 0) {
+                        args[2] = reviewVals.getAsString(Reviews.WRITTEN_ON);
+                        if (cr.update(uri, reviewVals, sel, args) == 0) {
+                            long reviewId = ContentUris.parseId(cr.insert(uri, reviewVals));
+                            if (reviewId > 0 && review.getTime() * 1000 > latest) {
+                                result.addReviewTime(reviewId, args[2]);
                             }
                         }
                     }
@@ -255,16 +266,18 @@ public class RestaurantService extends IntentService {
                 }
             }
         } else {
-            if (status == ZERO_RESULTS || status == NOT_FOUND) {
+            if (result.status == NOT_FOUND) {
                 vals.clear();
                 vals.put(Restaurants.PLACE_ID, "NOT_FOUND_" + id);
                 vals.put(Restaurants.REFRESHED_ON, SQLite.datetime());
+                vals.put(Restaurants.STATUS_ID, DELETED.id);
+                vals.put(Restaurants.DIRTY, 1);
                 cr.update(ContentUris.withAppendedId(Restaurants.CONTENT_URI, id), vals,
                         null, null);
                 deleteHours(cr, restaurantId); // so users don't think it's still open
             }
-            Log.e(TAG, "Places.details failed, status: " + status);
-            event("restaurant", "Places.details failed", status.toString());
+            Log.e(TAG, "Places.details failed, status: " + result.status);
+            event("restaurant", "Places.details failed", result.status.toString());
         }
         return result;
     }
@@ -362,15 +375,16 @@ public class RestaurantService extends IntentService {
      * was not successful or the Place didn't contain the properties.
      */
     public static class Result {
+        public Status status;
         public Place place;
-        public LongSparseArray<ContentValues> newReviews;
+        public LongSparseArray<String> newReviewTimes;
         public long photoId;
 
-        private void addReview(long id, ContentValues vals) {
-            if (newReviews == null) {
-                newReviews = new LongSparseArray<>();
+        private void addReviewTime(long id, String time) {
+            if (newReviewTimes == null) {
+                newReviewTimes = new LongSparseArray<>();
             }
-            newReviews.append(id, vals);
+            newReviewTimes.append(id, time);
         }
     }
 }

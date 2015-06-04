@@ -19,8 +19,6 @@ package net.sf.diningout.net;
 
 import android.util.Log;
 
-import com.squareup.okhttp.OkHttpClient;
-
 import net.sf.diningout.data.Init;
 import net.sf.diningout.data.Restaurant;
 import net.sf.diningout.data.Review;
@@ -28,21 +26,11 @@ import net.sf.diningout.data.Syncing;
 import net.sf.diningout.data.User;
 import net.sf.sprockets.preference.Prefs;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.SecureRandom;
 import java.util.List;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter.Builder;
 import retrofit.RetrofitError;
-import retrofit.client.Client;
-import retrofit.client.OkClient;
 import retrofit.http.Body;
 import retrofit.http.GET;
 import retrofit.http.POST;
@@ -57,28 +45,9 @@ import static net.sf.sprockets.gms.analytics.Trackers.exception;
  * Methods for communicating with the server.
  */
 public class Server {
-    public static final int BACKOFF_RETRIES = 5;
     private static final String TAG = Server.class.getSimpleName();
-    private static final Api API;
-
-    static {
-        try { // require the known server certificate when connecting
-            KeyStore store = KeyStore.getInstance("BKS");
-            InputStream cert = context().getAssets().open("cert");
-            store.load(cert, "diningout".toCharArray());
-            cert.close();
-            TrustManagerFactory trust = TrustManagerFactory.getInstance("X509");
-            trust.init(store);
-            SSLContext ssl = SSLContext.getInstance("TLS");
-            ssl.init(null, trust.getTrustManagers(), new SecureRandom());
-            Client client = new OkClient(
-                    new OkHttpClient().setSslSocketFactory(ssl.getSocketFactory()));
-            API = new Builder().setClient(client).setEndpoint(SERVER_URL)
-                    .setRequestInterceptor(new Interceptor()).build().create(Api.class);
-        } catch (GeneralSecurityException | IOException e) {
-            throw new RuntimeException("loading server certificate", e);
-        }
-    }
+    private static final Api API = new Builder().setEndpoint(SERVER_URL)
+            .setRequestInterceptor(new Interceptor()).build().create(Api.class);
 
     private Server() {
     }

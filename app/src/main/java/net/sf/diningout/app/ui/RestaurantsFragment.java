@@ -77,20 +77,24 @@ import static net.sf.sprockets.gms.analytics.Trackers.event;
 public class RestaurantsFragment extends SprocketsFragment
         implements LoaderCallbacks<EasyCursor>, OnItemClickListener {
     /**
-     * Loader arg for the position of the selected sort option.
+     * Loader argument for the position of the selected sort option.
      */
     private static final String SORT = "sort";
+
     /**
-     * Loader arg for restaurant name to search for.
+     * Loader argument for restaurant name to search for.
      */
     private static final String SEARCH_QUERY = "search_query";
-    private static final String[] sShareFields = {Restaurants.NAME, Restaurants.VICINITY,
-            Restaurants.INTL_PHONE, Restaurants.URL};
+
+    private static final String[] sShareFields =
+            {Restaurants.NAME, Restaurants.VICINITY, Restaurants.INTL_PHONE, Restaurants.URL};
 
     @InjectView(R.id.list)
     GridView mGrid;
+
     @Icicle
     Bundle mLoaderArgs;
+
     private Listener mListener;
     private SearchView mSearch;
     private ActionMode mActionMode;

@@ -34,7 +34,6 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CursorAdapter;
 import android.widget.GridView;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
@@ -52,24 +51,31 @@ import net.sf.sprockets.app.ui.SprocketsFragment;
 import net.sf.sprockets.content.EasyCursorLoader;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.net.Uris;
+import net.sf.sprockets.preference.Prefs;
 import net.sf.sprockets.util.StringArrays;
 import net.sf.sprockets.view.ViewHolder;
 import net.sf.sprockets.widget.ResourceEasyCursorAdapter;
+import net.wujingchao.android.view.SimpleTagImageView;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
 import butterknife.Optional;
 
+import static android.provider.BaseColumns._ID;
 import static android.text.format.DateUtils.FORMAT_ABBREV_ALL;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
+import static java.util.Collections.EMPTY_SET;
 import static net.sf.diningout.data.Status.ACTIVE;
 import static net.sf.diningout.data.Sync.Type.REVIEW;
 import static net.sf.diningout.data.Sync.Type.USER;
 import static net.sf.diningout.picasso.Transformations.BR;
+import static net.sf.diningout.preference.Keys.App.APP;
+import static net.sf.diningout.preference.Keys.App.NEW_SYNC_IDS;
 import static net.sf.sprockets.app.SprocketsApplication.res;
 import static net.sf.sprockets.sql.SQLite.alias_;
 import static net.sf.sprockets.sql.SQLite.aliased_;
+import static net.sf.sprockets.sql.SQLite.max;
 import static net.sf.sprockets.sql.SQLite.millis;
 
 /**
@@ -107,7 +113,7 @@ public class NotificationsFragment extends SprocketsFragment
 
     @Override
     public Loader<EasyCursor> onCreateLoader(int id, Bundle args) {
-        String[] proj = {SyncsJoinAll.SYNC__ID, alias_(SyncsJoinAll.SYNC_TYPE_ID),
+        String[] proj = {max(SyncsJoinAll.SYNC__ID), alias_(SyncsJoinAll.SYNC_TYPE_ID),
                 millis("max", Syncs.ACTION_ON), alias_(SyncsJoinAll.REVIEW_TYPE_ID),
                 alias_(SyncsJoinAll.RESTAURANT__ID), alias_(SyncsJoinAll.RESTAURANT_NAME),
                 alias_(SyncsJoinAll.CONTACT__ID), Contacts.ANDROID_LOOKUP_KEY, Contacts.ANDROID_ID,
@@ -237,6 +243,8 @@ public class NotificationsFragment extends SprocketsFragment
             notif.mTime.setText(now - when > MINUTE_IN_MILLIS
                     ? DateUtils.getRelativeTimeSpanString(when, now, 0, FORMAT_ABBREV_ALL)
                     : context.getString(R.string.recent_time));
+            notif.mPhoto.setTagEnable(Prefs.getStringSet(context, APP, NEW_SYNC_IDS, EMPTY_SET)
+                    .contains(String.valueOf(c.getLong(_ID))));
         }
 
         /**
@@ -253,7 +261,7 @@ public class NotificationsFragment extends SprocketsFragment
 
     public static class NotificationHolder extends ViewHolder {
         @InjectView(R.id.photo)
-        ImageView mPhoto;
+        SimpleTagImageView mPhoto;
 
         @InjectView(R.id.action)
         TextView mAction;

@@ -20,6 +20,7 @@ package net.sf.diningout.widget;
 import android.content.Context;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.QuickContact;
 import android.text.Html;
 import android.text.format.DateUtils;
 import android.view.View;
@@ -40,7 +41,9 @@ import net.sf.sprockets.view.Views;
 import net.sf.sprockets.widget.ResourceEasyCursorAdapter;
 
 import butterknife.InjectView;
+import butterknife.OnClick;
 
+import static android.provider.ContactsContract.QuickContact.MODE_LARGE;
 import static android.text.format.DateUtils.FORMAT_ABBREV_ALL;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static net.sf.diningout.picasso.Transformations.CIRCLE;
@@ -56,7 +59,7 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
     @Override
     public void bindView(View view, Context context, EasyCursor c) {
         ReviewHolder review = ViewHolder.get(view, ReviewHolder.class);
-        photo(context, review.mPhoto, c);
+        review.mContact = photo(context, review.mPhoto, c);
         review.mName.setText(name(context, c));
         review.mTime.setText(time(context, c));
         review.mRating.setText(c.getString(Reviews.RATING));
@@ -65,13 +68,17 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
 
     /**
      * Load the contact's photo into the View.
+     *
+     * @return contact's lookup URI
      */
-    private void photo(Context context, final ImageView view, EasyCursor c) {
+    private Uri photo(Context context, final ImageView view, EasyCursor c) {
+        Uri uri = null;
         if (!c.isNull(Reviews.CONTACT_ID)) {
             String key = c.getString(Contacts.ANDROID_LOOKUP_KEY);
             long id = c.getLong(Contacts.ANDROID_ID);
-            Uri uri = key != null && id > 0 ? ContactsContract.Contacts.getLookupUri(id, key)
-                    : null;
+            if (key != null && id > 0) {
+                uri = ContactsContract.Contacts.getLookupUri(id, key);
+            }
             final String name = c.getString(Contacts.NAME);
             Picasso.with(context).load(uri).resizeDimen(R.dimen.review_photo, R.dimen.review_photo)
                     .centerCrop().transform(CIRCLE).placeholder(Placeholders.round(c))
@@ -85,6 +92,7 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
         } else {
             Views.gone(view);
         }
+        return uri;
     }
 
     /**
@@ -146,9 +154,19 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
         @InjectView(R.id.comments)
         TextView mComments;
 
+        private Uri mContact;
+
         @Override
         protected ReviewHolder newInstance() {
             return new ReviewHolder();
+        }
+
+        @OnClick(R.id.photo)
+        void contact() {
+            if (mContact != null) {
+                QuickContact.showQuickContact(mPhoto.getContext(), mPhoto, mContact, MODE_LARGE,
+                        null);
+            }
         }
     }
 }

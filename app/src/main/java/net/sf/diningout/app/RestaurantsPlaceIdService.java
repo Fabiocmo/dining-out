@@ -21,6 +21,7 @@ import android.app.IntentService;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.sqlite.SQLiteConstraintException;
 import android.util.Log;
 
 import net.sf.diningout.provider.Contract.Restaurants;
@@ -73,7 +74,12 @@ public class RestaurantsPlaceIdService extends IntentService {
                 Place place = resp.getResult();
                 if (status == OK && place != null) {
                     vals.put(Restaurants.PLACE_ID, place.getPlaceId().getId());
-                    cr.update(Uris.appendId(Restaurants.CONTENT_URI, c), vals, null, null);
+                    try {
+                        cr.update(Uris.appendId(Restaurants.CONTENT_URI, c), vals, null, null);
+                    } catch (SQLiteConstraintException e) {
+                        vals.put(Restaurants.PLACE_ID, "DUPLICATE_" + c.getLong(_ID));
+                        cr.update(Uris.appendId(Restaurants.CONTENT_URI, c), vals, null, null);
+                    }
                 } else {
                     if (status == ZERO_RESULTS || status == NOT_FOUND) {
                         vals.put(Restaurants.PLACE_ID, "NOT_FOUND_" + c.getLong(_ID));

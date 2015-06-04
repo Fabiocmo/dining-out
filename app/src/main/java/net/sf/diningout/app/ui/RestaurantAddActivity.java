@@ -33,10 +33,12 @@ import android.widget.GridView;
 import net.sf.diningout.R;
 import net.sf.diningout.app.RestaurantService;
 import net.sf.diningout.provider.Contract.Restaurants;
+import net.sf.sprockets.content.Content.Query;
 import net.sf.sprockets.database.Cursors;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.google.Place;
 import net.sf.sprockets.google.Place.Id.Filter;
+import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.sql.SQLite;
 
 import icepick.Icicle;
@@ -98,50 +100,39 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.done:
-                ContentValues vals = new ContentValues(4);
-                long id = 0L;
-                if (mPlaceId != null) { // check for existing Google place, update or insert new
-                    String[] proj = {_ID, Restaurants.STATUS_ID};
-                    String sel = Restaurants.PLACE_ID + " = ?";
-                    String[] args = {mPlaceId};
-                    EasyCursor c = new EasyCursor(cr().query(Restaurants.CONTENT_URI, proj,
-                            sel, args, null));
-                    if (c.moveToFirst()) {
-                        id = c.getLong(_ID);
-                    }
-                    vals.put(Restaurants.NAME, mName);
-                    vals.put(Restaurants.NORMALISED_NAME, SQLite.normalise(mName));
-                    if (id <= 0) { // insert new
-                        vals.put(Restaurants.PLACE_ID, mPlaceId);
-                        vals.put(Restaurants.COLOR, Restaurants.defaultColor());
-                        id = ContentUris.parseId(cr().insert(Restaurants.CONTENT_URI, vals));
-                    } else if (c.getInt(Restaurants.STATUS_ID) != ACTIVE.id) { // resurrect
-                        vals.put(Restaurants.STATUS_ID, ACTIVE.id);
-                        vals.put(Restaurants.DIRTY, 1);
-                        cr().update(ContentUris.withAppendedId(Restaurants.CONTENT_URI, id), vals,
-                                null, null);
-                    }
-                    c.close();
-                    if (id > 0) {
-                        startService(new Intent(this, RestaurantService.class)
-                                .putExtra(RestaurantService.EXTRA_ID, id));
-                    }
-                } else { // insert own restaurant
-                    String name = autocomplete().mName.getText().toString().trim();
-                    if (!TextUtils.isEmpty(name)) {
-                        vals.put(Restaurants.NAME, name);
-                        vals.put(Restaurants.NORMALISED_NAME, SQLite.normalise(name));
-                        vals.put(Restaurants.COLOR, Restaurants.defaultColor());
-                        id = ContentUris.parseId(cr().insert(Restaurants.CONTENT_URI, vals));
-                    }
+                if (mPlaceId == null) {
+                    return true;
                 }
+                /* check for existing Google place, update or insert new */
+                EasyCursor c = new EasyCursor(this, new Query().uri(Restaurants.CONTENT_URI)
+                        .proj(_ID, Restaurants.STATUS_ID)
+                        .sel(Restaurants.PLACE_ID + " = ?").args(mPlaceId));
+                long id = 0L;
+                if (c.moveToFirst()) {
+                    id = c.getLong(_ID);
+                }
+                ContentValues vals = new ContentValues(4);
+                vals.put(Restaurants.NAME, mName);
+                vals.put(Restaurants.NORMALISED_NAME, SQLite.normalise(mName));
+                if (id <= 0) { // insert new
+                    vals.put(Restaurants.PLACE_ID, mPlaceId);
+                    vals.put(Restaurants.COLOR, Restaurants.defaultColor());
+                    id = ContentUris.parseId(cr().insert(Restaurants.CONTENT_URI, vals));
+                } else if (c.getInt(Restaurants.STATUS_ID) != ACTIVE.id) { // resurrect
+                    vals.put(Restaurants.STATUS_ID, ACTIVE.id);
+                    vals.put(Restaurants.DIRTY, 1);
+                    cr().update(Uris.appendId(Restaurants.CONTENT_URI, c), vals, null, null);
+                }
+                c.close();
                 if (id > 0) {
                     startActivity(
                             new Intent(this, RestaurantActivity.class).putExtra(EXTRA_ID, id));
+                    startService(new Intent(this, RestaurantService.class)
+                            .putExtra(RestaurantService.EXTRA_ID, id));
                     finish();
-                }
-                if (mSource != null) {
-                    event("restaurant add", "chosen from", mSource);
+                    if (mSource != null) {
+                        event("restaurant add", "chosen from", mSource);
+                    }
                 }
                 return true;
         }

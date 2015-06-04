@@ -71,15 +71,19 @@ public class InitRestaurantsFragment extends SprocketsFragment
         implements LoaderCallbacks<Response<List<Place>>>, OnItemClickListener, OnScrollListener {
     @InjectView(R.id.progress)
     View mProgress;
+
     @InjectView(R.id.list)
     GridViewWithHeaderAndFooter mGrid;
+
     private GooglePlacesAdapter mAdapter;
     private PoweredByGoogle mPowered;
     private Listener mListener;
+
     /**
      * Three lists of restaurants that are loaded on demand.
      */
     private final List<List<Place>> mPlaces = new ArrayList<>(3);
+
     /**
      * Next page tokens that can be used to load more restaurants when not null.
      */

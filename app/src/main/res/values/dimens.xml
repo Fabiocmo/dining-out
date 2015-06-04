@@ -11,6 +11,7 @@
     <!-- scales with system text size changes -->
     <dimen name="review_photo">@dimen/text_large</dimen>
     <dimen name="notification_card_height">128dp</dimen>
+    <dimen name="tag_corner_distance">32dp</dimen>
 
     <dimen name="attributions">11sp</dimen>
 </resources>
