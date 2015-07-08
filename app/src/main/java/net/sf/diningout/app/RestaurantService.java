@@ -160,7 +160,9 @@ public class RestaurantService extends IntentService {
             List<Review> reviews = Server.reviews(restaurant);
             if (reviews != null) {
                 boolean hasOwn = false;
-                for (Review review : reviews) {
+                int size = reviews.size();
+                for (int i = 0; i < size; i++) {
+                    Review review = reviews.get(i);
                     vals = Reviews.values(review);
                     String sel = Reviews.GLOBAL_ID + " = ?";
                     String[] args = {String.valueOf(review.globalId)};
@@ -220,7 +222,9 @@ public class RestaurantService extends IntentService {
                 ContentValues reviewVals = new ContentValues();
                 sel += " AND " + Reviews.WRITTEN_ON + " = ?";
                 args = Arrays.copyOf(args, 3);
-                for (Place.Review review : reviews) {
+                int size = reviews.size();
+                for (int i = 0; i < size; i++) {
+                    Place.Review review = reviews.get(i);
                     Reviews.values(reviewVals, id, review);
                     if (reviewVals.size() > 0) {
                         args[2] = reviewVals.getAsString(Reviews.WRITTEN_ON);

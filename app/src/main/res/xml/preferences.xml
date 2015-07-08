@@ -19,7 +19,7 @@
         android:title="@string/ringtone"/>
 
     <ListPreference
-        android:defaultValue=""
+        android:defaultValue="@string/automatic_value"
         android:entries="@array/distance_units_entries"
         android:key="distance_unit"
         android:summary="%s"

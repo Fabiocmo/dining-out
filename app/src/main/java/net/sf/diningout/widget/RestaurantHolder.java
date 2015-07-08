@@ -34,7 +34,7 @@ import net.sf.diningout.provider.Contract.Columns;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.view.ViewHolder;
 
-import butterknife.InjectView;
+import butterknife.Bind;
 
 import static android.text.format.DateUtils.FORMAT_ABBREV_ALL;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
@@ -48,13 +48,13 @@ import static net.sf.sprockets.util.MeasureUnit.MILE;
  * Views for a restaurant in a list and methods to update their contents.
  */
 public class RestaurantHolder extends ViewHolder {
-    @InjectView(R.id.photo)
+    @Bind(R.id.photo)
     public ImageView photo;
 
-    @InjectView(R.id.name)
+    @Bind(R.id.name)
     public TextView name;
 
-    @InjectView(R.id.detail)
+    @Bind(R.id.detail)
     public TextView detail;
 
     private final Context mContext;

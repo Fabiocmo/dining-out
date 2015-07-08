@@ -24,6 +24,7 @@ import android.database.Cursor;
 import android.location.Location;
 import android.net.Uri;
 import android.provider.BaseColumns;
+import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -58,7 +59,6 @@ import net.sf.sprockets.time.DayOfWeek;
 import net.sf.sprockets.util.Elements;
 import net.sf.sprockets.util.Geos;
 import net.sf.sprockets.util.MeasureUnit;
-import net.sf.sprockets.util.StringArrays;
 
 import org.apache.commons.io.filefilter.FileFilterUtils;
 
@@ -601,7 +601,7 @@ public class Contract {
         public static boolean deleteConflict(long id, long globalId) {
             String[] proj = {_ID};
             String sel = GLOBAL_ID + " = ? AND " + _ID + " <> ?";
-            String[] args = StringArrays.from(globalId, id);
+            String[] args = Elements.toStrings(globalId, id);
             long otherId = Cursors.firstLong(cr().query(CONTENT_URI, proj, sel, args, null));
             if (otherId > 0) {
                 /* delete other restaurant */
@@ -689,7 +689,7 @@ public class Contract {
             /* get current values for comparison */
             String[] proj = {ADDRESS};
             String sel = _ID + " = ? OR " + GLOBAL_ID + " = ?";
-            String[] args = StringArrays.from(restaurant.localId, restaurant.globalId);
+            String[] args = Elements.toStrings(restaurant.localId, restaurant.globalId);
             EasyCursor c = new EasyCursor(cr().query(CONTENT_URI, proj, sel, args, null));
             int count = c.getCount();
             String address = Cursors.firstString(c);
@@ -800,7 +800,7 @@ public class Contract {
             String[] proj = {OpenHours.TYPE_ID};
             String sel = OpenHours.RESTAURANT_ID + " = ? AND (" + OpenHours.DAY + " = ? AND "
                     + OpenHours.TIME + " <= ? OR " + OpenHours.DAY + " < ?)";
-            String[] args = StringArrays.from(id, day, time, day);
+            String[] args = Elements.toStrings(id, day, time, day);
             String order = OpenHours.DAY + " DESC, " + OpenHours.TIME + " DESC";
             int type = Cursors.firstInt(cr.query(uri, proj, sel, args, order));
             if (type != Integer.MIN_VALUE) {
@@ -873,8 +873,10 @@ public class Contract {
         public static ContentValues[] values(long restaurantId, Place place) {
             List<OpeningHours> hours = place.getOpeningHours();
             if (hours != null) {
-                List<ContentValues> vals = new ArrayList<>(hours.size() * 2); // open + close
-                for (OpeningHours hour : hours) {
+                int size = hours.size();
+                List<ContentValues> vals = new ArrayList<>(size * 2); // open + close
+                for (int i = 0; i < size; i++) {
+                    OpeningHours hour = hours.get(i);
                     DayOfWeek day = hour.getOpenDay();
                     int time = hour.getOpenTime();
                     if (day != null && time >= 0) {
@@ -1232,7 +1234,7 @@ public class Contract {
         public static ContentValues values(ContentValues vals, long restaurantId,
                                            Place.Review review) {
             String text = review.getText();
-            if (!TextUtils.isEmpty(text)) {
+            if (!TextUtils.isEmpty(Html.fromHtml(text))) {
                 vals.put(RESTAURANT_ID, restaurantId);
                 vals.put(TYPE_ID, GOOGLE.id);
                 vals.put(AUTHOR_NAME, review.getAuthorName());

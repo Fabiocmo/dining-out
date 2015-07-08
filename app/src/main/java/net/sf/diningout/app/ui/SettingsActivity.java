@@ -20,14 +20,14 @@ package net.sf.diningout.app.ui;
 import android.accounts.Account;
 import android.os.Bundle;
 import android.preference.ListPreference;
+import android.support.annotation.Nullable;
 import android.support.v4.widget.DrawerLayout;
 
 import net.sf.diningout.R;
 import net.sf.diningout.accounts.Accounts;
 import net.sf.sprockets.app.ui.SprocketsPreferenceFragment;
 
-import butterknife.InjectView;
-import butterknife.Optional;
+import butterknife.Bind;
 
 import static net.sf.diningout.preference.Keys.App.ACCOUNT_NAME;
 import static net.sf.diningout.preference.Keys.DISTANCE_UNIT;
@@ -38,8 +38,8 @@ import static net.sf.sprockets.util.MeasureUnit.MILE;
  * Displays app settings.
  */
 public class SettingsActivity extends BaseNavigationDrawerActivity {
-    @Optional
-    @InjectView(R.id.root)
+    @Nullable
+    @Bind(R.id.root)
     DrawerLayout mDrawerLayout;
 
     @Override
@@ -63,7 +63,8 @@ public class SettingsActivity extends BaseNavigationDrawerActivity {
                 findPreference(ACCOUNT_NAME).setSummary(account.name);
             }
             ((ListPreference) findPreference(DISTANCE_UNIT))
-                    .setEntryValues(new String[]{"", KILOMETER.getSubtype(), MILE.getSubtype()});
+                    .setEntryValues(new String[]{getString(R.string.automatic_value),
+                            KILOMETER.getSubtype(), MILE.getSubtype()});
         }
     }
 }

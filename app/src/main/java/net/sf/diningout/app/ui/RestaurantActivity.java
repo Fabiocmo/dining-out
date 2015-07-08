@@ -61,7 +61,7 @@ import net.sf.sprockets.widget.ListScrollListeners.OnScrollApprover;
 import net.sf.sprockets.widget.ListViews;
 import net.sf.sprockets.widget.ParallaxViewScrollListener;
 
-import butterknife.InjectView;
+import butterknife.Bind;
 
 import static android.content.Intent.ACTION_INSERT;
 import static android.support.v4.view.ViewPager.SCROLL_STATE_IDLE;
@@ -86,10 +86,10 @@ public class RestaurantActivity extends SprocketsActivity implements OnScrollApp
     public static final String EXTRA_ID = "intent.extra.ID";
 
     /**
-     * Tab to start on when the Activity is created. Must be one of {@link #TAB_PRIVATE},
-     * {@link #TAB_PUBLIC}, or {@link #TAB_NOTES}.
+     * Tab to start on when the Activity is created. Must be one of the {@code TAB_} constants.
      */
     public static final String EXTRA_TAB = "intent.extra.TAB";
+
     public static final int TAB_PRIVATE = 0;
     public static final int TAB_PUBLIC = 1;
     public static final int TAB_NOTES = 2;
@@ -103,16 +103,20 @@ public class RestaurantActivity extends SprocketsActivity implements OnScrollApp
      * Image to display while the restaurant photo is loading.
      */
     static Drawable sPlaceholder;
+
     private static final int[] sTabTitles = {R.string.tab_private, R.string.tab_public,
             R.string.tab_notes};
     private static final String[] sTabEventLabels = {"private", "public", "notes"};
 
-    @InjectView(R.id.detail)
+    @Bind(R.id.detail)
     View mDetail;
-    @InjectView(R.id.tabs)
+
+    @Bind(R.id.tabs)
     PagerSlidingTabStrip mTabs;
-    @InjectView(R.id.pager)
+
+    @Bind(R.id.pager)
     ViewPager mPager;
+
     private long mId;
     private int mActionBarSize;
 
@@ -151,8 +155,8 @@ public class RestaurantActivity extends SprocketsActivity implements OnScrollApp
     }
 
     @Override
-    public boolean onScroll(OnScrollListener listener, AbsListView view, int first, int visible,
-                            int total) {
+    public boolean onScroll(OnScrollListener listener, AbsListView view,
+                            int first, int visible, int total) {
         /* only when list is from current page */
         TabListFragment item = getCurrentTabFragment();
         return item != null && item.getView() != null && view == item.getListView();

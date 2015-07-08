@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:sprockets="http://schemas.android.com/apk/res-auto"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:background="@drawable/card"
-              android:gravity="center_vertical">
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card"
+    android:gravity="center_vertical">
 
     <TextView
         style="@style/Card.Title"
@@ -22,8 +23,8 @@
         android:hint="@string/autocomplete_hint"
         android:imeOptions="actionSearch"
         android:inputType="textCapWords|textMultiLine"
-        sprockets:radius="@integer/search_radius"
-        sprockets:types="@string/autocomplete_types"/>
+        app:radius="@integer/search_radius"
+        app:types="@string/autocomplete_types"/>
 
     <ImageButton
         android:id="@+id/search"

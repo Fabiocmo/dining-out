@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:sprockets="http://schemas.android.com/apk/res-auto"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <net.sf.sprockets.widget.GooglePlaceAutoComplete
         android:id="@+id/edit_address"
         style="@style/Cell.Title.Edit"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:minWidth="@dimen/restaurant_detail_edit_width"
-        android:maxWidth="@dimen/restaurant_detail_max_width"
         android:gravity="center_vertical|right"
-        android:inputType="textPostalAddress|textCapWords"
         android:hint="@string/add_address"
         android:imeOptions="actionDone"
-        sprockets:radius="@integer/search_radius"
-        sprockets:types="address"/>
+        android:inputType="textPostalAddress|textCapWords"
+        android:maxWidth="@dimen/restaurant_detail_max_width"
+        android:minWidth="@dimen/restaurant_detail_edit_width"
+        app:radius="@integer/search_radius"
+        app:types="address"/>
 
     <ImageButton
         android:id="@+id/save_address"
         style="?android:borderlessButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:src="@drawable/ic_action_accept"
-        android:contentDescription="@string/done"/>
+        android:contentDescription="@string/done"
+        android:src="@drawable/ic_action_accept"/>
 
 </LinearLayout>

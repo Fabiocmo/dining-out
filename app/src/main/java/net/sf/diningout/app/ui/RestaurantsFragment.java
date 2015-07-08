@@ -58,7 +58,7 @@ import net.sf.sprockets.sql.SQLite;
 import net.sf.sprockets.util.SparseArrays;
 import net.sf.sprockets.widget.SearchViews;
 
-import butterknife.InjectView;
+import butterknife.Bind;
 import icepick.Icicle;
 
 import static android.content.Intent.ACTION_SEND;
@@ -89,7 +89,7 @@ public class RestaurantsFragment extends SprocketsFragment
     private static final String[] sShareFields =
             {Restaurants.NAME, Restaurants.VICINITY, Restaurants.INTL_PHONE, Restaurants.URL};
 
-    @InjectView(R.id.list)
+    @Bind(R.id.list)
     GridView mGrid;
 
     @Icicle
@@ -187,6 +187,7 @@ public class RestaurantsFragment extends SprocketsFragment
                     || TextUtils.isEmpty(mLoaderArgs.getString(SEARCH_QUERY)))) {
                 startActivity(new Intent(a, RestaurantAddActivity.class)
                         .addFlags(FLAG_ACTIVITY_REORDER_TO_FRONT));
+                event("restaurants", "none, prompt to add");
             }
         }
     }
@@ -426,6 +427,7 @@ public class RestaurantsFragment extends SprocketsFragment
                     new Undoer(a, getString(R.string.n_deleted, ids.length),
                             Restaurants.CONTENT_URI, ids, DELETED, ACTIVE);
                     mode.finish(); // ensure mActionMode is null before updateActionMode is called
+                    event("restaurants", "delete", ids.length);
                     return true;
             }
             return false;

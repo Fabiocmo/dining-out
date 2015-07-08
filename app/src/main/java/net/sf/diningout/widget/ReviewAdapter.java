@@ -40,13 +40,14 @@ import net.sf.sprockets.view.ViewHolder;
 import net.sf.sprockets.view.Views;
 import net.sf.sprockets.widget.ResourceEasyCursorAdapter;
 
-import butterknife.InjectView;
+import butterknife.Bind;
 import butterknife.OnClick;
 
 import static android.provider.ContactsContract.QuickContact.MODE_LARGE;
 import static android.text.format.DateUtils.FORMAT_ABBREV_ALL;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static net.sf.diningout.picasso.Transformations.CIRCLE;
+import static net.sf.sprockets.gms.analytics.Trackers.event;
 
 /**
  * Translates review rows to Views.
@@ -139,19 +140,19 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
     }
 
     public static class ReviewHolder extends ViewHolder {
-        @InjectView(R.id.photo)
+        @Bind(R.id.photo)
         ImageView mPhoto;
 
-        @InjectView(R.id.name)
+        @Bind(R.id.name)
         TextView mName;
 
-        @InjectView(R.id.time)
+        @Bind(R.id.time)
         TextView mTime;
 
-        @InjectView(R.id.rating)
+        @Bind(R.id.rating)
         TextView mRating;
 
-        @InjectView(R.id.comments)
+        @Bind(R.id.comments)
         TextView mComments;
 
         private Uri mContact;
@@ -166,6 +167,7 @@ public class ReviewAdapter extends ResourceEasyCursorAdapter {
             if (mContact != null) {
                 QuickContact.showQuickContact(mPhoto.getContext(), mPhoto, mContact, MODE_LARGE,
                         null);
+                event("review", "click", "photo");
             }
         }
     }

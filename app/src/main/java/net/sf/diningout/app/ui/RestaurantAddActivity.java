@@ -67,6 +67,9 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (mName != null) {
+            setTitle(getString(R.string.add_s, mName));
+        }
         setContentView(R.layout.restaurant_add);
         getLoaderManager().initLoader(0, null, this);
     }
@@ -111,14 +114,15 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
                 if (c.moveToFirst()) {
                     id = c.getLong(_ID);
                 }
-                ContentValues vals = new ContentValues(4);
-                vals.put(Restaurants.NAME, mName);
-                vals.put(Restaurants.NORMALISED_NAME, SQLite.normalise(mName));
                 if (id <= 0) { // insert new
+                    ContentValues vals = new ContentValues(4);
+                    vals.put(Restaurants.NAME, mName);
+                    vals.put(Restaurants.NORMALISED_NAME, SQLite.normalise(mName));
                     vals.put(Restaurants.PLACE_ID, mPlaceId);
                     vals.put(Restaurants.COLOR, Restaurants.defaultColor());
                     id = ContentUris.parseId(cr().insert(Restaurants.CONTENT_URI, vals));
                 } else if (c.getInt(Restaurants.STATUS_ID) != ACTIVE.id) { // resurrect
+                    ContentValues vals = new ContentValues(2);
                     vals.put(Restaurants.STATUS_ID, ACTIVE.id);
                     vals.put(Restaurants.DIRTY, 1);
                     cr().update(Uris.appendId(Restaurants.CONTENT_URI, c), vals, null, null);
@@ -130,9 +134,7 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
                     startService(new Intent(this, RestaurantService.class)
                             .putExtra(RestaurantService.EXTRA_ID, id));
                     finish();
-                    if (mSource != null) {
-                        event("restaurant add", "chosen from", mSource);
-                    }
+                    event("restaurant add", "chosen from", mSource);
                 }
                 return true;
         }
@@ -142,37 +144,19 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
     @Override
     public void onRestaurantNameChange(CharSequence name) {
         GridView grid = nearby().mGrid;
-        if (name.length() > 0) {
-            name = name.toString().trim();
-            if (!TextUtils.isEmpty(name)) {
-                setTitle(getString(R.string.add_s, name));
-            } else {
-                setTitle(R.string.add_restaurant_title);
-            }
+        if (TextUtils.getTrimmedLength(name) > 0) {
             if (grid.getCheckedItemCount() > 0) { // switch from list to autocomplete
                 grid.setItemChecked(grid.getCheckedItemPosition(), false);
                 clear();
             }
-        } else {
-            setTitle(R.string.add_restaurant_title);
-            if (grid.getCheckedItemCount() == 0) { // forget any autocompletion
-                clear();
-            }
+        } else if (grid.getCheckedItemCount() == 0) { // forget any autocompletion
+            clear();
         }
-    }
-
-    /**
-     * Set fields to default values.
-     */
-    private void clear() {
-        mPlaceId = null;
-        mName = null;
-        mSource = null;
     }
 
     @Override
     public void onRestaurantAutocomplete(Place place) {
-        fields(place, "autocomplete");
+        set(place, "autocomplete");
     }
 
     @Override
@@ -183,18 +167,22 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
 
     @Override
     public void onRestaurantClick(Place place) {
-        autocomplete().mName.setText(null); // first because it resets title
-        setTitle(getString(R.string.add_s, place.getName()));
-        fields(place, "nearby");
+        autocomplete().mName.setText(null);
+        set(place, TextUtils.isEmpty(nearby().mSearch) ? "nearby" : "search result");
     }
 
-    /**
-     * Populate fields from the place.
-     */
-    private void fields(Place place, String source) {
+    private void set(Place place, String source) {
         mPlaceId = place.getPlaceId().getId();
         mName = place.getName();
         mSource = source;
+        setTitle(getString(R.string.add_s, mName));
+    }
+
+    private void clear() {
+        mPlaceId = null;
+        mName = null;
+        mSource = null;
+        setTitle(R.string.add_restaurant_title);
     }
 
     private RestaurantAutocompleteFragment autocomplete() {

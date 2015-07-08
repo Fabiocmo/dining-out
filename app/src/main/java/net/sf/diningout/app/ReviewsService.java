@@ -25,7 +25,6 @@ import android.content.Intent;
 import net.sf.diningout.data.Review;
 import net.sf.diningout.data.User;
 import net.sf.diningout.net.Server;
-import net.sf.diningout.provider.Contract.Contacts;
 import net.sf.diningout.provider.Contract.Restaurants;
 import net.sf.diningout.provider.Contract.Reviews;
 
@@ -36,13 +35,15 @@ import static net.sf.diningout.provider.Contract.CALL_UPDATE_RESTAURANT_RATING;
 import static net.sf.sprockets.app.SprocketsApplication.cr;
 
 /**
- * Gets reviews written by a user. Callers must include {@link #EXTRA_ID} in their Intent extras.
+ * Gets reviews written by users. Callers must include {@link #EXTRA_GLOBAL_IDS} in their Intent
+ * extras.
  */
 public class ReviewsService extends IntentService {
     /**
-     * ID of the user.
+     * Global IDs of the users whose reviews should be downloaded. (long[])
      */
-    public static final String EXTRA_ID = "intent.extra.ID";
+    public static final String EXTRA_GLOBAL_IDS = "intent.extra.GLOBAL_IDS";
+
     private static final String TAG = ReviewsService.class.getSimpleName();
 
     public ReviewsService() {
@@ -51,21 +52,29 @@ public class ReviewsService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        download(intent.getLongExtra(EXTRA_ID, 0L));
+        download(intent.getLongArrayExtra(EXTRA_GLOBAL_IDS));
+    }
+
+    /**
+     * Download reviews written by the users.
+     */
+    public static void download(long[] globalIds) {
+        for (long globalId : globalIds) {
+            download(globalId);
+        }
     }
 
     /**
      * Download reviews written by the user.
      */
-    public static void download(long id) {
+    public static void download(long globalId) {
         User user = new User();
-        user.globalId = Contacts.globalIdForId(id);
-        if (user.globalId > 0) {
-            List<Review> reviews = Server.reviews(user);
-            if (reviews != null) {
-                for (Review review : reviews) {
-                    add(review);
-                }
+        user.globalId = globalId;
+        List<Review> reviews = Server.reviews(user);
+        if (reviews != null) {
+            int size = reviews.size();
+            for (int i = 0; i < size; i++) {
+                add(reviews.get(i));
             }
         }
     }

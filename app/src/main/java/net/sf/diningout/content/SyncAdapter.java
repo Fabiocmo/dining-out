@@ -44,7 +44,7 @@ import android.util.Log;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.gcm.GoogleCloudMessaging;
+import com.google.android.gms.iid.InstanceID;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofenceStatusCodes;
 import com.google.android.gms.location.GeofencingRequest;
@@ -85,7 +85,7 @@ import net.sf.sprockets.gms.location.Locations;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.preference.Prefs;
 import net.sf.sprockets.sql.SQLite;
-import net.sf.sprockets.util.StringArrays;
+import net.sf.sprockets.util.Elements;
 
 import java.io.IOException;
 import java.util.List;
@@ -98,6 +98,7 @@ import static android.content.ContentResolver.SYNC_EXTRAS_UPLOAD;
 import static android.provider.BaseColumns._ID;
 import static android.text.format.DateUtils.DAY_IN_MILLIS;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
+import static com.google.android.gms.gcm.GoogleCloudMessaging.INSTANCE_ID_SCOPE;
 import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
 import static com.google.android.gms.location.LocationServices.GeofencingApi;
 import static com.google.common.base.Charsets.UTF_8;
@@ -222,7 +223,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 String id = uploadCloudId(context);
                 if (!TextUtils.isEmpty(id)) {
                     prefs.edit().putString(CLOUD_ID, id).apply();
-                    // todo service isn't working yet
+                    // todo service returns HTTP 401, probably should decouple this from cloud_id
                     // String key = getCloudNotificationKey(context, selected, id);
                     // if (!TextUtils.isEmpty(key)) {
                     //     prefs.edit().putString(CLOUD_NOTIFICATION_KEY, key).apply();
@@ -249,13 +250,16 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     .putLong(INSTALL_ID, init.installId).apply();
             if (init.users != null) {
                 ContentValues vals = new ContentValues(6);
-                for (User user : init.users) {
-                    cp.insert(CONTACTS_URI, Contacts.values(vals, user));
+                int size = init.users.size();
+                for (int i = 0; i < size; i++) {
+                    cp.insert(CONTACTS_URI, Contacts.values(vals, init.users.get(i)));
                 }
             }
             if (init.restaurants != null) {
                 Prefs.putBoolean(context, APP, ONBOARDED, true);
-                for (Restaurant restaurant : init.restaurants) {
+                int size = init.restaurants.size();
+                for (int i = 0; i < size; i++) {
+                    Restaurant restaurant = init.restaurants.get(i);
                     restaurant.localId = Restaurants.add(restaurant.globalId);
                     if (restaurant.localId > 0) {
                         RestaurantService.download(restaurant.localId);
@@ -434,7 +438,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         ContentValues vals = new ContentValues(2);
         String sel = Columns.VERSION + " = ?";
         String[] args = new String[1];
-        for (Synced synced : synceds) {
+        int size = synceds.size();
+        for (int i = 0; i < size; i++) {
+            Synced synced = synceds.get(i);
             if (synced.globalId > 0 && uri != REVIEW_DRAFTS_URI) {
                 vals.put(Columns.GLOBAL_ID, synced.globalId);
                 if (uri == RESTAURANTS_URI) {
@@ -455,27 +461,33 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         Syncing syncing = Server.sync();
         if (syncing != null) {
             if (syncing.users != null) {
-                for (Sync<User> sync : syncing.users) {
+                int size = syncing.users.size();
+                for (int i = 0; i < size; i++) {
+                    Sync<User> sync = syncing.users.get(i);
                     if (sync.userId == 0) { // in case server starts sending changes by other users
                         syncUser(cp, sync);
                     }
                 }
             }
             if (syncing.restaurants != null) {
-                for (Sync<Restaurant> sync : syncing.restaurants) {
+                int size = syncing.restaurants.size();
+                for (int i = 0; i < size; i++) {
+                    Sync<Restaurant> sync = syncing.restaurants.get(i);
                     if (sync.userId == 0) { // in case server starts sending changes by other users
                         syncRestaurant(cp, sync);
                     }
                 }
             }
             if (syncing.reviews != null) {
-                for (Sync<Review> sync : syncing.reviews) {
-                    syncReview(cp, sync);
+                int size = syncing.reviews.size();
+                for (int i = 0; i < size; i++) {
+                    syncReview(cp, syncing.reviews.get(i));
                 }
             }
             if (syncing.reviewDrafts != null) {
-                for (Sync<Review> sync : syncing.reviewDrafts) {
-                    syncReviewDraft(cp, sync);
+                int size = syncing.reviewDrafts.size();
+                for (int i = 0; i < size; i++) {
+                    syncReviewDraft(cp, syncing.reviewDrafts.get(i));
                 }
             }
         }
@@ -501,9 +513,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 int following = user.isFollowing ? 1 : 0;
                 vals.put(Contacts.FOLLOWING, following);
                 String sel = Contacts.GLOBAL_ID + " = ? AND " + Contacts.FOLLOWING + " <> ?";
-                String[] args = StringArrays.from(user.globalId, following);
+                String[] args = Elements.toStrings(user.globalId, following);
                 if (cp.update(CONTACTS_URI, vals, sel, args) > 0 && user.isFollowing) {
-                    ReviewsService.download(Contacts.idForGlobalId(user.globalId));
+                    ReviewsService.download(user.globalId);
                 }
                 break;
         }
@@ -635,7 +647,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         if (results != null) {
             for (Result result : results) {
                 if (result.newReviewTimes != null) {
-                    for (int i = 0; i < result.newReviewTimes.size(); i++) {
+                    int size = result.newReviewTimes.size();
+                    for (int i = 0; i < size; i++) {
                         cp.insert(SYNCS_URI, Syncs.values(
                                 result.newReviewTimes.keyAt(i), result.newReviewTimes.valueAt(i)));
                     }
@@ -708,20 +721,20 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         int retries = 5;
         for (int i = 0; i < retries; i++) {
             try {
-                String id = GoogleCloudMessaging.getInstance(context).register(PROJECT_ID);
+                String id = InstanceID.getInstance(context).getToken(PROJECT_ID, INSTANCE_ID_SCOPE);
                 Boolean synced = Server.syncCloudId(id);
                 if (synced != null) {
                     return synced ? id : null;
                 }
             } catch (IOException e) {
-                Log.e(TAG, "registering with GCM", e);
+                Log.e(TAG, "getting GCM token", e);
                 exception(e);
             }
             if (i + 1 < retries) {
-                SystemClock.sleep((1 << i) * 1000); // wait and retry, register can error
-                event("gcm", "register retry", i + 1);
+                SystemClock.sleep((1 << i) * 1000); // wait and retry, getToken can error
+                event("gms", "gcm token retry", i + 1);
             } else {
-                event("gcm", "couldn't register after retries", retries);
+                event("gms", "couldn't get gcm token after retries", retries);
             }
         }
         return null;

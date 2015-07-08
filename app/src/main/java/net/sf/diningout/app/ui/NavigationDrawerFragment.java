@@ -17,14 +17,13 @@
 
 package net.sf.diningout.app.ui;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
+import android.util.SparseArray;
 import android.view.View;
 import android.widget.ListView;
-
-import com.google.common.collect.BiMap;
-import com.google.common.collect.ImmutableBiMap;
 
 import net.sf.diningout.R;
 import net.sf.sprockets.app.ui.BaseNavigationDrawerFragment;
@@ -42,23 +41,23 @@ import static android.view.Gravity.START;
  * Displays the navigation drawer items and starts the associated Activities when clicked.
  */
 public class NavigationDrawerFragment extends BaseNavigationDrawerFragment {
-    /**
-     * Map Activities to their navigation drawer item.
-     */
-    private static final BiMap<Class<?>, Integer> ITEMS = ImmutableBiMap.of(
-            (Class<?>) RestaurantsActivity.class, R.string.restaurants_title,
-            FriendsActivity.class, R.string.friends_title,
-            NotificationsActivity.class, R.string.notifications_title,
-            SettingsActivity.class, R.id.settings);
+    private static final SparseArray<Class<? extends Activity>> sItems = new SparseArray<>(4);
+
+    static {
+        sItems.put(R.string.restaurants_title, RestaurantsActivity.class);
+        sItems.put(R.string.friends_title, FriendsActivity.class);
+        sItems.put(R.string.notifications_title, NotificationsActivity.class);
+        sItems.put(R.id.settings, SettingsActivity.class);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null) {
             setItems(R.array.navigation_drawer_items);
-            Integer selected = ITEMS.get(a.getClass());
-            if (selected != null) {
-                setSelectedItemResId(selected);
+            int i = sItems.indexOfValue(a.getClass());
+            if (i >= 0) { // Activity is in navigation
+                setSelectedItemResId(sItems.keyAt(i));
             }
             showSettings(true).showFeedback(true).showRate(true);
         }
@@ -89,15 +88,14 @@ public class NavigationDrawerFragment extends BaseNavigationDrawerFragment {
             return;
         }
         /* start associated Activity */
-        final Class<?> src = a.getClass();
-        Class<?> dest = ITEMS.inverse().get(resId);
+        final Class<? extends Activity> src = a.getClass();
+        final Class<? extends Activity> dest = sItems.get(resId);
         if (dest != src) {
             a.setOneTimeDrawerActionDelay(300L); // finish fade to dest before ActionBar restored
-            final Intent intent = new Intent(a, dest).addFlags(FLAG_ACTIVITY_CLEAR_TOP);
             view.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    startActivity(intent);
+                    startActivity(new Intent(a, dest).addFlags(FLAG_ACTIVITY_CLEAR_TOP));
                     if (src != RestaurantsActivity.class) {
                         a.finish();
                     }

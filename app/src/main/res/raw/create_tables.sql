@@ -22,6 +22,7 @@ CREATE TABLE contact (
     inserted_on TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_on TEXT
 );
+CREATE INDEX contact_android_id ON contact (android_id);
 CREATE INDEX contact_dirty ON contact (dirty);
 
 CREATE TRIGGER contact_version AFTER UPDATE OF dirty ON contact WHEN NEW.dirty = 1

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 pushbit <pushbit@gmail.com>
+ * Copyright 2014-2015 pushbit <pushbit@gmail.com>
  * 
  * This file is part of Dining Out.
  * 
@@ -39,10 +39,11 @@ import net.sf.sprockets.content.EasyCursorLoader;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.view.ViewHolder;
 
-import butterknife.InjectView;
+import butterknife.Bind;
 import icepick.Icicle;
 
 import static net.sf.sprockets.app.SprocketsApplication.cr;
+import static net.sf.sprockets.gms.analytics.Trackers.event;
 
 /**
  * Displays editable notes for a restaurant.
@@ -50,8 +51,10 @@ import static net.sf.sprockets.app.SprocketsApplication.cr;
 public class NotesFragment extends TabListFragment implements LoaderCallbacks<EasyCursor> {
     @Icicle
     long mRestaurantId;
+
     @Icicle
     CharSequence mNotes;
+
     @Icicle
     String mStoredNotes;
 
@@ -142,9 +145,10 @@ public class NotesFragment extends TabListFragment implements LoaderCallbacks<Ea
             ContentValues vals = new ContentValues(2);
             vals.put(Restaurants.NOTES, notes);
             vals.put(Restaurants.DIRTY, 1);
-            cr().update(ContentUris.withAppendedId(Restaurants.CONTENT_URI, mRestaurantId),
-                    vals, null, null);
+            cr().update(ContentUris.withAppendedId(Restaurants.CONTENT_URI, mRestaurantId), vals,
+                    null, null); // could use ContentService instead
             mStoredNotes = notes;
+            event("restaurant", "update notes", "length", notes.length());
         }
     }
 
@@ -180,7 +184,7 @@ public class NotesFragment extends TabListFragment implements LoaderCallbacks<Ea
     }
 
     public static class NotesHolder extends ViewHolder {
-        @InjectView(R.id.notes)
+        @Bind(R.id.notes)
         EditText mNotes;
 
         @Override

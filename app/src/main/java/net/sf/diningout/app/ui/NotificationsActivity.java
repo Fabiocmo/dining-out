@@ -20,6 +20,7 @@ package net.sf.diningout.app.ui;
 import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.widget.DrawerLayout;
 import android.view.View;
 
@@ -30,8 +31,7 @@ import net.sf.diningout.data.Review;
 import net.sf.diningout.data.Sync.Type;
 import net.sf.sprockets.view.ViewHolder;
 
-import butterknife.InjectView;
-import butterknife.Optional;
+import butterknife.Bind;
 
 import static net.sf.diningout.app.ui.RestaurantActivity.EXTRA_ID;
 import static net.sf.diningout.app.ui.RestaurantActivity.EXTRA_TAB;
@@ -42,8 +42,8 @@ import static net.sf.diningout.data.Review.Type.GOOGLE;
  * Displays a list of notifications.
  */
 public class NotificationsActivity extends BaseNavigationDrawerActivity implements Listener {
-    @Optional
-    @InjectView(R.id.root)
+    @Nullable
+    @Bind(R.id.root)
     DrawerLayout mDrawerLayout;
 
     @Override

@@ -29,6 +29,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.SimpleOnPageChangeListener;
@@ -51,13 +52,12 @@ import net.sf.sprockets.preference.Prefs;
 
 import java.util.ArrayList;
 
-import butterknife.InjectView;
-import butterknife.Optional;
+import butterknife.Bind;
 import icepick.Icicle;
 
 import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static com.google.android.gms.auth.GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE;
-import static net.sf.diningout.app.InitService.EXTRA_CONTACT_IDS;
+import static net.sf.diningout.app.InitService.EXTRA_FOLLOW_IDS;
 import static net.sf.diningout.app.InitService.EXTRA_RESTAURANTS;
 import static net.sf.diningout.preference.Keys.App.ACCOUNT_INITIALISED;
 import static net.sf.diningout.preference.Keys.App.ACCOUNT_NAME;
@@ -80,8 +80,8 @@ public class InitActivity extends PanesActivity
      */
     private static final String PROGRESS = "progress";
 
-    @Optional
-    @InjectView(R.id.panes)
+    @Nullable
+    @Bind(R.id.panes)
     ViewPager mPager;
 
     /**
@@ -144,6 +144,8 @@ public class InitActivity extends PanesActivity
                 Content.requestSyncNow(account, AUTHORITY);
                 return;
             }
+        } else {
+            event("account", "not chosen", "result code " + resultCode);
         }
         /* proceed without account and/or network connection */
         invalidateOptionsMenu(); // API 16 overwrites 'done' with 'add' without this
@@ -186,8 +188,7 @@ public class InitActivity extends PanesActivity
                 } else { // add restaurants, follow and invite friends, send to restaurants Activity
                     Intent intent = new Intent(this, InitService.class);
                     /* send selected restaurants */
-                    Place[] places = ((InitRestaurantsFragment) findFragmentByPane(1))
-                            .getCheckedRestaurants();
+                    Place[] places = ((InitRestaurantsFragment) findFragmentByPane(1)).getChecked();
                     if (places != null) {
                         ArrayList<ContentValues> vals = new ArrayList<>(places.length);
                         for (Place place : places) {
@@ -197,8 +198,8 @@ public class InitActivity extends PanesActivity
                     }
                     /* send followed friends */
                     FriendsFragment friends = findFragmentByPane(2);
-                    long[] followed = friends.getFollowedFriends();
-                    startService(intent.putExtra(EXTRA_CONTACT_IDS, followed));
+                    long[] followed = friends.getFollowed();
+                    startService(intent.putExtra(EXTRA_FOLLOW_IDS, followed));
                     Prefs.putBoolean(this, APP, ONBOARDED, true);
                     startActivity(new Intent(this, RestaurantsActivity.class));
                     friends.invite();
@@ -338,7 +339,7 @@ public class InitActivity extends PanesActivity
                         startActivity(new Intent(InitActivity.this, RestaurantsActivity.class));
                         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     }
-                }, 1000L); // hopefully a restaurant is already added to avoid triggering 'add' help
+                }, 1000L); // wait for restaurant add to avoid 'add restaurant' Activity launch
                 event("user", "restore");
             }
         }

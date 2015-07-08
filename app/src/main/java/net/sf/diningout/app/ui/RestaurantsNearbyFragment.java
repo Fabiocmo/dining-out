@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.Loader;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.text.Html;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -48,8 +49,7 @@ import net.sf.sprockets.view.Views;
 
 import java.util.List;
 
-import butterknife.InjectView;
-import butterknife.Optional;
+import butterknife.Bind;
 import icepick.Icicle;
 import in.srain.cube.views.GridViewWithHeaderAndFooter;
 
@@ -67,17 +67,17 @@ import static net.sf.sprockets.view.animation.Interpolators.ANTI_OVER;
  */
 public class RestaurantsNearbyFragment extends SprocketsFragment
         implements LoaderCallbacks<Response<List<Place>>>, OnItemClickListener {
-    @Optional
-    @InjectView(R.id.header)
+    @Nullable
+    @Bind(R.id.header)
     TextView mHeader;
 
-    @InjectView(R.id.progress)
+    @Bind(R.id.progress)
     View mProgress;
 
-    @InjectView(R.id.empty)
+    @Bind(R.id.empty)
     ViewStub mEmptyStub;
 
-    @InjectView(R.id.list)
+    @Bind(R.id.list)
     GridViewWithHeaderAndFooter mGrid;
 
     @Icicle

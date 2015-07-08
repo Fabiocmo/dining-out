@@ -20,6 +20,7 @@ package net.sf.diningout.picasso;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
+import android.text.TextUtils;
 import android.widget.ImageView;
 
 import com.amulyakhare.textdrawable.TextDrawable;
@@ -65,8 +66,8 @@ public class Placeholders {
      * text.
      */
     public static Drawable rect(EasyCursor c, String text) {
-        return text.length() > 0 ? sRect.buildRect(text.substring(0, 1), c.getInt(Columns.COLOR))
-                : rect(c);
+        return !TextUtils.isEmpty(text)
+                ? sRect.buildRect(text.substring(0, 1), c.getInt(Columns.COLOR)) : rect(c);
     }
 
     /**
@@ -90,7 +91,7 @@ public class Placeholders {
      * Write the first letter of the text in the centre of the view's ShapeDrawable.
      */
     public static void round(ImageView view, String text) {
-        if (text.length() > 0) {
+        if (!TextUtils.isEmpty(text)) {
             view.setImageDrawable(sRound.buildRound(text.substring(0, 1),
                     ((ShapeDrawable) view.getDrawable()).getPaint().getColor()));
         }

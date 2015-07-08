@@ -25,6 +25,7 @@ import android.content.Loader;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.annotation.Nullable;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -52,15 +53,14 @@ import net.sf.sprockets.content.EasyCursorLoader;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.preference.Prefs;
-import net.sf.sprockets.util.StringArrays;
+import net.sf.sprockets.util.Elements;
 import net.sf.sprockets.view.ViewHolder;
 import net.sf.sprockets.widget.ResourceEasyCursorAdapter;
 import net.wujingchao.android.view.SimpleTagImageView;
 
+import butterknife.Bind;
 import butterknife.ButterKnife;
-import butterknife.InjectView;
 import butterknife.OnClick;
-import butterknife.Optional;
 
 import static android.provider.BaseColumns._ID;
 import static android.text.format.DateUtils.FORMAT_ABBREV_ALL;
@@ -83,8 +83,9 @@ import static net.sf.sprockets.sql.SQLite.millis;
  */
 public class NotificationsFragment extends SprocketsFragment
         implements LoaderCallbacks<EasyCursor>, OnItemClickListener {
-    @InjectView(R.id.list)
+    @Bind(R.id.list)
     GridView mGrid;
+
     private Listener mListener;
 
     @Override
@@ -122,7 +123,7 @@ public class NotificationsFragment extends SprocketsFragment
         String sel = SyncsJoinAll.SYNC_TYPE_ID + " = ? AND " + SyncsJoinAll.REVIEW_STATUS_ID
                 + " = ? AND " + SyncsJoinAll.RESTAURANT_STATUS_ID + " = ? OR "
                 + SyncsJoinAll.SYNC_TYPE_ID + " = ? AND " + SyncsJoinAll.CONTACT_STATUS_ID + " = ?";
-        String[] selArgs = StringArrays.from(REVIEW.id, ACTIVE.id, ACTIVE.id, USER.id, ACTIVE.id);
+        String[] selArgs = Elements.toStrings(REVIEW.id, ACTIVE.id, ACTIVE.id, USER.id, ACTIVE.id);
         Uri uri = Uris.groupBy(SyncsJoinAll.CONTENT_URI,
                 SyncsJoinAll.RESTAURANT__ID + ", " + SyncsJoinAll.CONTACT__ID);
         String order = Syncs.ACTION_ON + " DESC";
@@ -135,7 +136,7 @@ public class NotificationsFragment extends SprocketsFragment
             if (c.getCount() == 0 && mGrid.getEmptyView() == null) {
                 View view = getView();
                 mGrid.setEmptyView(((ViewStub) view.findViewById(R.id.empty)).inflate());
-                ButterKnife.inject(this, view);
+                ButterKnife.bind(this, view);
             }
             ((CursorAdapter) mGrid.getAdapter()).swapCursor(c);
         }
@@ -161,7 +162,7 @@ public class NotificationsFragment extends SprocketsFragment
     /**
      * Go to {@link FriendsActivity}.
      */
-    @Optional
+    @Nullable
     @OnClick(R.id.invite)
     void invite() {
         startActivity(new Intent(a, FriendsActivity.class));
@@ -260,13 +261,13 @@ public class NotificationsFragment extends SprocketsFragment
     }
 
     public static class NotificationHolder extends ViewHolder {
-        @InjectView(R.id.photo)
+        @Bind(R.id.photo)
         SimpleTagImageView mPhoto;
 
-        @InjectView(R.id.action)
+        @Bind(R.id.action)
         TextView mAction;
 
-        @InjectView(R.id.time)
+        @Bind(R.id.time)
         TextView mTime;
 
         @Override

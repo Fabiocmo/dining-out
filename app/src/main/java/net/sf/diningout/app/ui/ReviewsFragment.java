@@ -31,6 +31,7 @@ import android.content.Intent;
 import android.content.Loader;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -63,15 +64,14 @@ import net.sf.sprockets.content.EasyCursorLoader;
 import net.sf.sprockets.content.Intents;
 import net.sf.sprockets.content.res.Themes;
 import net.sf.sprockets.database.EasyCursor;
+import net.sf.sprockets.util.Elements;
 import net.sf.sprockets.util.SparseArrays;
-import net.sf.sprockets.util.StringArrays;
 import net.sf.sprockets.view.ViewHolder;
 import net.sf.sprockets.view.inputmethod.InputMethods;
 
+import butterknife.Bind;
 import butterknife.ButterKnife;
-import butterknife.InjectView;
 import butterknife.OnClick;
-import butterknife.Optional;
 import icepick.Icicle;
 
 import static android.app.SearchManager.QUERY;
@@ -126,6 +126,7 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
 
     @Icicle
     long mDraftVersion = -1L;
+
     private ActionMode mActionMode;
     private final Intent mShare = new Intent(ACTION_SEND).setType("text/plain");
 
@@ -199,7 +200,7 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
                                 + Reviews.STATUS_ID + " = ?";
                         break;
                 }
-                selArgs = StringArrays.from(mRestaurantId, mTypeId, ACTIVE.id);
+                selArgs = Elements.toStrings(mRestaurantId, mTypeId, ACTIVE.id);
                 order = Reviews.WRITTEN_ON + " DESC";
                 break;
             case LOADER_REVIEW_DRAFT:
@@ -232,7 +233,7 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
                                 View view = a.getLayoutInflater()
                                         .inflate(R.layout.reviews_public_empty, list, false);
                                 list.addHeaderView(view);
-                                ButterKnife.inject(this, view);
+                                ButterKnife.bind(this, view);
                             }
                         } else if (list.getHeaderViewsCount() > 1) { // no longer need header View
                             list.removeHeaderView(list.getAdapter().getView(1, null, list));
@@ -306,25 +307,31 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
+        int id = item.getItemId();
+        switch (id) {
             case R.id.add:
                 editReview(true);
                 return true;
             case R.id.done:
                 EditReviewHolder review = getReview();
                 if (review == null) { // somehow can click done without editing a review
+                    event("review", "try to add/update but holder is null");
                     return true;
                 }
                 if (TextUtils.getTrimmedLength(review.mComments.getText()) == 0) { // confirm
                     DialogFragment dialog = new EmptyReviewDialog();
                     dialog.setTargetFragment(this, 0);
                     dialog.show(getFragmentManager(), null);
+                    event("review", "empty, prompt to confirm");
                     return true;
                 }
                 item.setEnabled(false); // prevent double tap due to delayed menu invalidate
                 saveReview(); // and then fall through to discard draft
             case R.id.discard:
                 discard();
+                if (id == R.id.discard) {
+                    event("review", "discard");
+                }
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -353,6 +360,7 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
                             ReviewsFragment frag = (ReviewsFragment) getTargetFragment();
                             frag.saveReview();
                             frag.discard();
+                            event("review", "add empty");
                         }
                     }).setNegativeButton(android.R.string.no, null).create();
         }
@@ -389,8 +397,9 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
      */
     private void saveReview() {
         EditReviewHolder review = getReview();
+        String comments = review.mComments.getText().toString().trim();
         ContentValues vals = new ContentValues(4);
-        vals.put(Reviews.COMMENTS, review.mComments.getText().toString().trim());
+        vals.put(Reviews.COMMENTS, comments);
         vals.put(Reviews.RATING, review.mRatings.getSelectedItemPosition() + 1);
         String restaurantId = String.valueOf(mRestaurantId);
         if (mReviewId == 0) {
@@ -398,10 +407,12 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
             vals.put(Reviews.TYPE_ID, mTypeId);
             cr().insert(Reviews.CONTENT_URI, vals);
             cr().call(AUTHORITY_URI, CALL_UPDATE_RESTAURANT_LAST_VISIT, restaurantId, null);
+            event("review", "add", "length", comments.length());
         } else {
             vals.put(Reviews.DIRTY, 1);
             cr().update(ContentUris.withAppendedId(Reviews.CONTENT_URI, mReviewId), vals, null,
                     null);
+            event("review", "update", "length", comments.length());
         }
         cr().call(AUTHORITY_URI, CALL_UPDATE_RESTAURANT_RATING, restaurantId, null);
     }
@@ -453,7 +464,7 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
     /**
      * Search the web for reviews of the restaurant.
      */
-    @Optional
+    @Nullable
     @OnClick(R.id.search)
     void searchWeb() {
         Intent intent = new Intent(ACTION_WEB_SEARCH)
@@ -534,11 +545,13 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
         if (count > 0) {
             if (newRating != oldRating || !newComments.equals(oldComments)) {
                 cr().update(uri, draftValues(newComments, newRating, ACTIVE), null, null);
+                event("review", "save draft");
             }
         } else {
             ContentValues vals = draftValues(newComments, newRating, ACTIVE);
             vals.put(ReviewDrafts.RESTAURANT_ID, mRestaurantId);
             cr().insert(ReviewDrafts.CONTENT_URI, vals);
+            event("review", "save draft");
         }
     }
 
@@ -660,6 +673,7 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
                         }
                     };
                     mode.finish(); // ensure mActionMode is null before updateActionMode is called
+                    event("reviews", "delete", ids.length);
                     return true;
             }
             return false;
@@ -672,11 +686,13 @@ public class ReviewsFragment extends TabListFragment implements LoaderCallbacks<
     }
 
     public static class EditReviewHolder extends ViewHolder {
-        @InjectView(R.id.title)
+        @Bind(R.id.title)
         TextView mTitle;
-        @InjectView(R.id.ratings)
+
+        @Bind(R.id.ratings)
         Spinner mRatings;
-        @InjectView(R.id.comments)
+
+        @Bind(R.id.comments)
         EditText mComments;
 
         @Override

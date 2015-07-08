@@ -57,10 +57,11 @@ import net.sf.sprockets.content.Managers;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.preference.Prefs;
-import net.sf.sprockets.util.StringArrays;
+import net.sf.sprockets.util.Elements;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -160,13 +161,14 @@ public class Notifications {
                     icon = photo(context, photo);
                 }
             }
-            if (!lines.isEmpty()) { // have something to notify about
+            int size = lines.size();
+            if (size > 0) { // have something to notify about
                 CharSequence bigText = null;
                 CharSequence summary = null;
                 Intent activity;
                 if (users > 0 && reviews == 0) {
                     activity = new Intent(context, FriendsActivity.class);
-                } else if (users == 0 && (reviews == 1 || lines.size() == 1)) {
+                } else if (users == 0 && (reviews == 1 || size == 1)) {
                     bigText = ReviewAdapter.comments(review.comments);
                     summary = context.getString(R.string.n_stars, review.rating);
                     activity = new Intent(context, RestaurantActivity.class)
@@ -179,7 +181,7 @@ public class Notifications {
                 }
                 notify(context, lines, bigText, summary, when, icon, users + reviews, activity);
                 Prefs.putStringSet(context, APP, NEW_SYNC_IDS, syncIds);
-                event("notification", "notify", "sync", users + reviews);
+                event("notification", "notify", "sync", size);
             } else { // sync object was deleted
                 Managers.notification(context).cancel(TAG_SYNC, 0);
                 context.startService(new Intent(context, SyncsReadService.class));
@@ -235,7 +237,7 @@ public class Notifications {
                 alias_(ReviewsJoinAll.CONTACT_NAME)};
         String sel = ReviewsJoinAll.REVIEW_STATUS_ID + " = ? AND "
                 + ReviewsJoinAll.RESTAURANT_STATUS_ID + " = ?";
-        String[] args = StringArrays.from(ACTIVE.id, ACTIVE.id);
+        String[] args = Elements.toStrings(ACTIVE.id, ACTIVE.id);
         EasyCursor c = new EasyCursor(cr.query(
                 ContentUris.withAppendedId(ReviewsJoinAll.CONTENT_URI, id), proj, sel, args, null));
         if (c.moveToFirst()) {
@@ -262,7 +264,8 @@ public class Notifications {
     private static void notify(Context context, Set<CharSequence> lines, CharSequence bigText,
                                CharSequence summary, long when, Bitmap icon, int totalItems,
                                Intent activity) {
-        CharSequence title = lines.iterator().next();
+        Iterator<CharSequence> linesIter = lines.iterator();
+        CharSequence title = linesIter.next();
         BigTextStyle style = new BigTextStyle();
         if (lines.size() == 1) {
             if (bigText != null) {
@@ -272,10 +275,10 @@ public class Notifications {
                 style.setSummaryText(summary);
             }
         } else { // add lines after title
-            lines.remove(title);
+            linesIter.remove();
             StringBuilder text = new StringBuilder(lines.size() * 48);
-            for (CharSequence line : lines) {
-                text.append(context.getString(R.string.sync_item, line));
+            while (linesIter.hasNext()) {
+                text.append(context.getString(R.string.sync_item, linesIter.next()));
             }
             style.bigText(text);
         }
@@ -389,7 +392,7 @@ public class Notifications {
                 Reviews.RATING, millis(Reviews.WRITTEN_ON), Contacts.NAME};
         String sel = Reviews.RESTAURANT_ID + " = ? AND length(" + Reviews.COMMENTS + ") > 0 AND "
                 + ReviewsJoinContacts.REVIEW_STATUS_ID + " = ?";
-        String[] args = StringArrays.from(restaurantId, ACTIVE.id);
+        String[] args = Elements.toStrings(restaurantId, ACTIVE.id);
         String order = Reviews.TYPE_ID + ", " + Reviews.WRITTEN_ON + " DESC, "
                 + ReviewsJoinContacts.REVIEW__ID + " DESC";
         return new EasyCursor(cr().query(uri, proj, sel, args, order));
@@ -441,7 +444,7 @@ public class Notifications {
         String sel = Reviews.RESTAURANT_ID + " = ? AND " + Reviews.TYPE_ID + " = ? AND "
                 + Reviews.CONTACT_ID + " IS NULL AND "
                 + Reviews.WRITTEN_ON + " >= datetime('now', '-4 hours')";
-        String[] args = StringArrays.from(restaurantId, PRIVATE.id);
+        String[] args = Elements.toStrings(restaurantId, PRIVATE.id);
         Cursor c = cr().query(Uris.limit(Reviews.CONTENT_URI, 1), proj, sel, args, null);
         int count = c.getCount();
         c.close();

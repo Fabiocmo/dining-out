@@ -18,13 +18,13 @@
 package net.sf.diningout.app.ui;
 
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.widget.DrawerLayout;
 
 import net.sf.diningout.R;
 import net.sf.diningout.app.ui.FriendsFragment.Listener;
 
-import butterknife.InjectView;
-import butterknife.Optional;
+import butterknife.Bind;
 
 import static android.view.Gravity.START;
 
@@ -32,8 +32,8 @@ import static android.view.Gravity.START;
  * Displays contacts to follow and invite to join.
  */
 public class FriendsActivity extends BaseNavigationDrawerActivity implements Listener {
-    @Optional
-    @InjectView(R.id.root)
+    @Nullable
+    @Bind(R.id.root)
     DrawerLayout mDrawerLayout;
 
     @Override

@@ -31,18 +31,19 @@ import java.util.List;
 import static net.sf.sprockets.app.SprocketsApplication.cr;
 
 /**
- * Inserts the restaurants, updates their details, downloads their photos, and follows the contacts.
+ * Inserts the restaurants, updates their details, downloads their photos, and follows the users.
  */
 public class InitService extends IntentService {
     /**
-     * ContentValues ArrayList of restaurants to insert and update.
+     * Restaurants to insert and update. (ArrayList<ContentValues>)
      */
     public static final String EXTRA_RESTAURANTS = "intent.extra.RESTAURANTS";
 
     /**
-     * long array of contacts to follow.
+     * Global IDs of users to follow. (long[])
      */
-    public static final String EXTRA_CONTACT_IDS = "intent.extra.CONTACT_IDS";
+    public static final String EXTRA_FOLLOW_IDS = "intent.extra.FOLLOW_IDS";
+
     private static final String TAG = InitService.class.getSimpleName();
 
     public InitService() {
@@ -52,7 +53,7 @@ public class InitService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         List<ContentValues> restaurants = intent.getParcelableArrayListExtra(EXTRA_RESTAURANTS);
-        long[] contactIds = intent.getLongArrayExtra(EXTRA_CONTACT_IDS);
+        long[] followIds = intent.getLongArrayExtra(EXTRA_FOLLOW_IDS);
         ContentResolver cr = cr();
         long[] restaurantIds = null;
         if (restaurants != null) { // insert the restaurants
@@ -64,24 +65,27 @@ public class InitService extends IntentService {
                 restaurantIds[i] = ContentUris.parseId(cr.insert(Restaurants.CONTENT_URI, vals));
             }
         }
-        if (contactIds != null) { // follow the contacts
+        if (followIds != null) { // follow the users
             ContentValues vals = new ContentValues(2);
             vals.put(Contacts.FOLLOWING, 1);
             vals.put(Contacts.DIRTY, 1);
-            for (long id : contactIds) {
-                cr.update(ContentUris.withAppendedId(Contacts.CONTENT_URI, id), vals, null, null);
+            String sel = Contacts.GLOBAL_ID + " = ?";
+            String[] args = new String[1];
+            for (long followId : followIds) {
+                args[0] = String.valueOf(followId);
+                cr.update(Contacts.CONTENT_URI, vals, sel, args);
             }
         }
         if (restaurantIds != null) { // update restaurant details, insert reviews and photos
-            for (long id : restaurantIds) {
-                if (id > 0) {
-                    RestaurantService.download(id);
+            for (long restaurantId : restaurantIds) {
+                if (restaurantId > 0) {
+                    RestaurantService.download(restaurantId);
                 }
             }
         }
-        if (contactIds != null) { // get followee reviews
-            for (long id : contactIds) {
-                ReviewsService.download(id);
+        if (followIds != null) { // get followee reviews
+            for (long followId : followIds) {
+                ReviewsService.download(followId);
             }
         }
     }

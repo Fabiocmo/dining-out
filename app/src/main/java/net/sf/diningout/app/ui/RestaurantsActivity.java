@@ -24,6 +24,8 @@ import android.content.Intent;
 import android.content.Loader;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.util.SimpleArrayMap;
 import android.support.v4.widget.DrawerLayout;
 import android.view.View;
 import android.widget.AbsListView;
@@ -36,7 +38,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 
 import net.sf.diningout.R;
 import net.sf.diningout.app.ui.RestaurantsFragment.Listener;
@@ -53,12 +55,9 @@ import net.sf.sprockets.gms.maps.GoogleMaps;
 import net.sf.sprockets.view.ActionModePresenter;
 import net.sf.sprockets.view.ViewHolder;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 
-import butterknife.InjectView;
-import butterknife.Optional;
+import butterknife.Bind;
 import icepick.Icicle;
 
 import static android.app.ActionBar.NAVIGATION_MODE_LIST;
@@ -83,25 +82,31 @@ public class RestaurantsActivity extends BaseNavigationDrawerActivity
      * ID of a restaurant to delete.
      */
     static final String EXTRA_DELETE_ID = "intent.extra.DELETE_ID";
+
     /**
      * Tag for the map fragment.
      */
     private static final String MAP = "map";
+
     private static final int MAP_NAVIGATION_ITEM_POSITION = 3;
 
-    @Optional
-    @InjectView(R.id.root)
+    @Nullable
+    @Bind(R.id.root)
     DrawerLayout mDrawerLayout;
+
     /**
      * Position of selected sort option.
      */
     @Icicle
     int mSort;
+
     private GoogleMap mMap;
+
     /**
      * Maps to restaurant ID.
      */
-    private Map<Marker, Long> mMarkers;
+    private SimpleArrayMap<Marker, Long> mMarkers;
+
     /**
      * True if the next map load should move the camera to the user's location.
      */
@@ -130,7 +135,7 @@ public class RestaurantsActivity extends BaseNavigationDrawerActivity
         getLoaderManager().initLoader(0, null, this); // need already to support config changes
     }
 
-    private static final String[] sSortEventLabels = {"by name", "by last visit", "by distance",
+    private static final String[] sSortLabels = {"by name", "by last visit", "by distance",
             "on a map", "by rating"};
 
     @Override
@@ -157,7 +162,7 @@ public class RestaurantsActivity extends BaseNavigationDrawerActivity
                 mMoveToMyLocation = true;
                 map.getMapAsync(this);
             }
-            event("restaurants", "sort", sSortEventLabels[pos]);
+            event("restaurants", "sort", sSortLabels[pos]);
         }
         return true;
     }
@@ -228,7 +233,7 @@ public class RestaurantsActivity extends BaseNavigationDrawerActivity
             Marker marker = mMap.addMarker(options.position(position)
                     .title(c.getString(Restaurants.NAME)).snippet(snippet));
             if (mMarkers == null) {
-                mMarkers = new HashMap<>(c.getCount());
+                mMarkers = new SimpleArrayMap<>(c.getCount());
             }
             mMarkers.put(marker, c.getLong(_ID));
             if (distance < nearestDistance) {
@@ -288,8 +293,8 @@ public class RestaurantsActivity extends BaseNavigationDrawerActivity
     }
 
     @Override
-    public Set<ActionModePresenter> getActionModePresenters() {
-        return ImmutableSet.of((ActionModePresenter) restaurants());
+    public List<ActionModePresenter> getActionModePresenters() {
+        return ImmutableList.of((ActionModePresenter) restaurants());
     }
 
     private RestaurantsFragment restaurants() {

@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.content.Loader;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -82,10 +83,9 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import butterknife.Bind;
 import butterknife.ButterKnife;
-import butterknife.InjectView;
 import butterknife.OnClick;
-import butterknife.Optional;
 
 import static android.content.Intent.ACTION_DIAL;
 import static android.content.Intent.ACTION_EDIT;
@@ -117,34 +117,34 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
     private static final int LOAD_DETAILS = 0;
     private static final int LOAD_HOURS = 1;
 
-    @InjectView(R.id.photo)
+    @Bind(R.id.photo)
     ImageView mPhoto;
 
-    @InjectView(R.id.name)
+    @Bind(R.id.name)
     TextView mNameView;
 
-    @InjectView(R.id.address)
+    @Bind(R.id.address)
     TextView mVicinity;
 
-    @Optional
-    @InjectView(R.id.edit_address_stub)
+    @Nullable
+    @Bind(R.id.edit_address_stub)
     ViewStub mEditAddressStub;
 
-    @InjectView(R.id.hours)
+    @Bind(R.id.hours)
     Spinner mHours;
 
-    @InjectView(R.id.phone)
+    @Bind(R.id.phone)
     TextView mLocalPhone;
 
-    @Optional
-    @InjectView(R.id.edit_phone_stub)
+    @Nullable
+    @Bind(R.id.edit_phone_stub)
     ViewStub mEditPhoneStub;
 
-    @InjectView(R.id.website)
+    @Bind(R.id.website)
     TextView mWebsite;
 
-    @Optional
-    @InjectView(R.id.edit_website_stub)
+    @Nullable
+    @Bind(R.id.edit_website_stub)
     ViewStub mEditWebsiteStub;
 
     private long mId;
@@ -342,13 +342,15 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.notifications:
-                item.setChecked(!item.isChecked());
+                boolean checked = !item.isChecked();
+                item.setChecked(checked);
                 Uri uri = ContentUris.withAppendedId(Restaurants.CONTENT_URI, mId);
                 ContentValues vals = new ContentValues(2);
-                vals.put(Restaurants.GEOFENCE_NOTIFICATIONS, item.isChecked() ? 1 : 0);
+                vals.put(Restaurants.GEOFENCE_NOTIFICATIONS, checked ? 1 : 0);
                 vals.put(Restaurants.DIRTY, 1);
                 a.startService(new Intent(ACTION_EDIT, uri, a, ContentService.class)
                         .putExtra(EXTRA_VALUES, vals));
+                event("restaurant", "set notifications", checked ? "on" : "off");
                 return true;
             case R.id.refresh:
                 a.startService(new Intent(a, RestaurantService.class)
@@ -358,6 +360,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
             case R.id.delete:
                 startActivity(new Intent(a, RestaurantsActivity.class)
                         .putExtra(EXTRA_DELETE_ID, mId).addFlags(FLAG_ACTIVITY_CLEAR_TOP));
+                event("restaurant", "delete");
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -412,7 +415,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
         }
     }
 
-    @Optional
+    @Nullable
     @OnClick({R.id.save_address, R.id.save_phone, R.id.save_website})
     public void onSave(ImageButton button) {
         dismissEditGroup(button.getId(), true);
@@ -594,7 +597,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
                         }
                     }
                 });
-                ButterKnife.inject(RestaurantFragment.this, getView()); // done button click
+                ButterKnife.bind(RestaurantFragment.this, getView()); // done button click
                 mEditAddressStub = null;
             }
             mEditAddressGroup.setTranslationX(
@@ -614,7 +617,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
             if (mEditPhoneStub != null) {
                 mEditPhoneGroup = mEditPhoneStub.inflate();
                 mEditPhone = findById(mEditPhoneGroup, R.id.edit_phone);
-                ButterKnife.inject(RestaurantFragment.this, getView());
+                ButterKnife.bind(RestaurantFragment.this, getView());
                 mEditPhoneStub = null;
             }
             mEditPhoneGroup.setTranslationX(
@@ -634,7 +637,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
             if (mEditWebsiteStub != null) {
                 mEditWebsiteGroup = mEditWebsiteStub.inflate();
                 mEditWebsite = findById(mEditWebsiteGroup, R.id.edit_website);
-                ButterKnife.inject(RestaurantFragment.this, getView());
+                ButterKnife.bind(RestaurantFragment.this, getView());
                 mEditWebsiteStub = null;
             }
             mEditWebsiteGroup.setTranslationX(

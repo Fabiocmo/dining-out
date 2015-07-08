@@ -31,11 +31,16 @@ import static net.sf.diningout.preference.Keys.App.NAVIGATION_DRAWER_OPENED;
  */
 public class BaseNavigationDrawerActivity extends NavigationDrawerActivity {
     @Override
-    public NavigationDrawerActivity setDrawerLayout(DrawerLayout layout) {
+    public NavigationDrawerActivity setDrawerLayout(final DrawerLayout layout) {
         super.setDrawerLayout(layout);
         if (!Prefs.getBoolean(this, APP, NAVIGATION_DRAWER_OPENED)) {
-            layout.openDrawer(START);
             Prefs.putBoolean(this, APP, NAVIGATION_DRAWER_OPENED, true);
+            layout.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    layout.openDrawer(START);
+                }
+            }, 600L); // let user see animation
         }
         return this;
     }

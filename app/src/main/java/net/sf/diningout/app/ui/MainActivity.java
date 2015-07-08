@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 pushbit <pushbit@gmail.com>
+ * Copyright 2013-2015 pushbit <pushbit@gmail.com>
  *
  * This file is part of Dining Out.
  *
@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
             startActivity(new Intent(this, !Prefs.getBoolean(this, APP, ONBOARDED)
                     ? InitActivity.class : RestaurantsActivity.class));
             finish();
+            overridePendingTransition(0, 0);
         } else {
             avail.showErrorDialogFragment(this, status, 0, new OnCancelListener() {
                 @Override

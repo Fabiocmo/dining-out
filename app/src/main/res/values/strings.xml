@@ -104,6 +104,7 @@
     <string name="invite">Invite</string>
     <string name="inviting">Inviting</string>
     <string name="non_contact">[Not in contacts]</string>
+    <string name="send_invite_to">Send invite to</string>
     <string name="invite_subject">Dining Out for Android</string>
     <string name="invite_body">Join me in Dining Out for Android and we can share our restaurant reviews and recommendations together.\n\nGet it on Google Play!\nhttps://play.google.com/store/apps/details?id=net.sf.diningout\n</string>
 
@@ -143,6 +144,7 @@
         <item>@string/kilometres</item>
         <item>@string/miles</item>
     </string-array>
+    <string name="automatic_value">automatic</string>
     <string name="allow_analytics">Help improve Dining Out</string>
     <string name="allow_analytics_on">Send anonymous usage statistics</string>
     <string name="allow_analytics_off">Don’t send anonymous usage statistics</string>

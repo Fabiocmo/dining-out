@@ -17,16 +17,15 @@
 
 package net.sf.diningout.app.ui;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.app.Activity;
+import android.app.AlertDialog.Builder;
+import android.app.Dialog;
+import android.app.Fragment;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.BroadcastReceiver;
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
@@ -63,6 +62,7 @@ import net.sf.diningout.app.ReviewsService;
 import net.sf.diningout.picasso.Placeholders;
 import net.sf.diningout.provider.Contract.Contacts;
 import net.sf.sprockets.app.ContentService;
+import net.sf.sprockets.app.ui.SprocketsDialogFragment;
 import net.sf.sprockets.app.ui.SprocketsFragment;
 import net.sf.sprockets.content.Content;
 import net.sf.sprockets.content.Intents;
@@ -72,18 +72,20 @@ import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.database.ReadCursor;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.sql.SQLite;
+import net.sf.sprockets.util.Elements;
 import net.sf.sprockets.util.SparseArrays;
 import net.sf.sprockets.view.ViewHolder;
 import net.sf.sprockets.widget.ResourceReadCursorAdapter;
 import net.sf.sprockets.widget.SearchViews;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.primitives.ArrayLongList;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import butterknife.InjectView;
+import butterknife.Bind;
 import icepick.Icicle;
 
 import static android.content.Intent.ACTION_EDIT;
@@ -91,16 +93,21 @@ import static android.content.Intent.ACTION_SENDTO;
 import static android.provider.BaseColumns._ID;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
-import static net.sf.diningout.app.ReviewsService.EXTRA_ID;
+import static net.sf.diningout.app.ReviewsService.EXTRA_GLOBAL_IDS;
 import static net.sf.diningout.data.Status.ACTIVE;
 import static net.sf.diningout.picasso.Transformations.TL;
 import static net.sf.diningout.provider.Contract.ACTION_CONTACTS_SYNCED;
 import static net.sf.diningout.provider.Contract.ACTION_CONTACTS_SYNCING;
 import static net.sf.diningout.provider.Contract.AUTHORITY;
 import static net.sf.diningout.provider.Contract.SYNC_EXTRAS_CONTACTS_ONLY;
+import static net.sf.sprockets.app.ContentService.EXTRA_SELECTION;
 import static net.sf.sprockets.app.ContentService.EXTRA_VALUES;
 import static net.sf.sprockets.app.SprocketsApplication.res;
 import static net.sf.sprockets.gms.analytics.Trackers.event;
+import static net.sf.sprockets.sql.SQLite.groupConcat;
+import static net.sf.sprockets.sql.SQLite.in;
+import static net.sf.sprockets.sql.SQLite.max;
+import static net.sf.sprockets.sql.SQLite.min;
 import static net.sf.sprockets.view.animation.Interpolators.ANTICIPATE;
 import static net.sf.sprockets.view.animation.Interpolators.OVERSHOOT;
 
@@ -121,13 +128,13 @@ public class FriendsFragment extends SprocketsFragment
     @Icicle
     boolean mInit;
 
-    @InjectView(R.id.header)
+    @Bind(R.id.header)
     ViewStub mHeader;
 
-    @InjectView(R.id.progress)
+    @Bind(R.id.progress)
     View mProgress;
 
-    @InjectView(R.id.list)
+    @Bind(R.id.list)
     GridView mGrid;
 
     private Listener mListener;
@@ -193,12 +200,14 @@ public class FriendsFragment extends SprocketsFragment
 
     @Override
     public Loader<ReadCursor> onCreateLoader(int id, Bundle args) {
-        String[] proj = {_ID, Contacts.GLOBAL_ID, Contacts.ANDROID_LOOKUP_KEY, Contacts.ANDROID_ID,
-                Contacts.NAME, Contacts.EMAIL, Contacts.FOLLOWING, Contacts.COLOR};
+        String[] proj = {min(_ID), groupConcat(Contacts.GLOBAL_ID),
+                Contacts.ANDROID_LOOKUP_KEY, Contacts.ANDROID_ID, Contacts.NAME,
+                groupConcat(Contacts.EMAIL, "\t"), max(Contacts.FOLLOWING), Contacts.COLOR};
         StringBuilder sel = new StringBuilder(Contacts.STATUS_ID).append(" = ?");
         String[] selArgs;
+        Uri uri = Uris.groupBy(Contacts.CONTENT_URI, Contacts.ANDROID_ID);
         StringBuilder order = new StringBuilder(
-                Contacts.GLOBAL_ID + " IS NULL, " + Contacts.NAME + ", " + Contacts.EMAIL);
+                Contacts.GLOBAL_ID + " IS NOT NULL DESC, " + Contacts.NAME + ", " + _ID);
         String searchQuery = args != null ? args.getString(SEARCH_QUERY) : null;
         if (!TextUtils.isEmpty(searchQuery)) {
             sel.append(" AND ").append(Contacts.NORMALISED_NAME).append(" LIKE ?");
@@ -208,8 +217,7 @@ public class FriendsFragment extends SprocketsFragment
         } else {
             selArgs = new String[]{String.valueOf(ACTIVE.id)};
         }
-        return new ReadCursorLoader(a, Contacts.CONTENT_URI, proj, sel.toString(), selArgs,
-                order.toString()); // probably don't need ReadCursor now that updating on click
+        return new ReadCursorLoader(a, uri, proj, sel.toString(), selArgs, order.toString());
     }
 
     @Override
@@ -229,28 +237,28 @@ public class FriendsFragment extends SprocketsFragment
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        if (mListener.onFriendsOptionsMenu()) {
-            inflater.inflate(R.menu.friends, menu);
-            if (mInit) {
-                menu.removeItem(R.id.search);
-            } else {
-                MenuItem item = menu.findItem(R.id.search);
-                mSearch = (SearchView) item.getActionView();
-                mSearch.setSearchableInfo(
-                        Managers.search(a).getSearchableInfo(a.getComponentName()));
-                SearchViews.setBackground(mSearch, R.drawable.textfield_searchview);
-                mSearch.setOnSearchClickListener(new OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        event("friends", "search");
-                    }
-                });
-                mSearch.setOnQueryTextListener(new SearchTextListener());
-                item.setOnActionExpandListener(new SearchExpandListener());
-            }
-            if (!Intents.hasActivity(a, sAddIntent)) {
-                menu.removeItem(R.id.add);
-            }
+        if (!mListener.onFriendsOptionsMenu()) {
+            return;
+        }
+        inflater.inflate(R.menu.friends, menu);
+        if (mInit) {
+            menu.removeItem(R.id.search);
+        } else {
+            MenuItem item = menu.findItem(R.id.search);
+            mSearch = (SearchView) item.getActionView();
+            mSearch.setSearchableInfo(Managers.search(a).getSearchableInfo(a.getComponentName()));
+            SearchViews.setBackground(mSearch, R.drawable.textfield_searchview);
+            mSearch.setOnSearchClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    event("friends", "search");
+                }
+            });
+            mSearch.setOnQueryTextListener(new SearchTextListener());
+            item.setOnActionExpandListener(new SearchExpandListener());
+        }
+        if (!Intents.hasActivity(a, sAddIntent)) {
+            menu.removeItem(R.id.add);
         }
     }
 
@@ -260,7 +268,7 @@ public class FriendsFragment extends SprocketsFragment
             case R.id.add:
                 if (Intents.hasActivity(a, sAddIntent)) {
                     startActivity(sAddIntent);
-                    event("friends", "add");
+                    event("friend", "add");
                 }
                 return true;
             default:
@@ -269,84 +277,53 @@ public class FriendsFragment extends SprocketsFragment
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, final long id) {
-        /* slide out text views, update their values, slide them back in */
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        /* slide out action, update its value, slide it back in */
         final FriendHolder friend = ViewHolder.get(view);
-        final String name; // contact name or email address if clicked to invite
         EasyCursor c = (EasyCursor) mGrid.getItemAtPosition(position);
         final boolean isUser = !c.isNull(Contacts.GLOBAL_ID);
+        final String globalId = c.getString(Contacts.GLOBAL_ID);
+        final String email = c.getString(Contacts.EMAIL);
         final boolean isChecked = mGrid.isItemChecked(position);
-        Animator anim; // just action anim when following users, action and name anims when inviting
-        Animator actionAnim = // slide right off screen
-                ObjectAnimator.ofFloat(friend.mAction, "translationX", friend.mAction.getWidth());
-        if (isUser) {
-            name = null; // not changing
-            anim = actionAnim;
-        } else {
-            name = c.getString(isChecked ? Contacts.EMAIL : Contacts.NAME);
-            Animator nameAnim = // slide left off screen
-                    ObjectAnimator.ofFloat(friend.mName, "translationX", -view.getWidth());
-            AnimatorSet set = new AnimatorSet();
-            set.playTogether(actionAnim, nameAnim);
-            anim = set;
-        }
-        anim.setInterpolator(ANTICIPATE);
-        anim.addListener(new AnimatorListenerAdapter() { // update view(s) and slide back into place
+        friend.mAction.animate().withEndAction(new Runnable() {
             @Override
-            public void onAnimationEnd(Animator anim) {
-                super.onAnimationEnd(anim);
+            public void run() {
                 updateAction(friend.mAction, isChecked, isUser);
-                Animator actionAnim = ObjectAnimator.ofFloat(friend.mAction, "translationX", 0.0f);
-                if (isUser) {
-                    anim = actionAnim;
-                } else {
-                    updateName(friend.mName, name, isChecked, isUser);
-                    Animator nameAnim = ObjectAnimator.ofFloat(friend.mName, "translationX", 0.0f);
-                    AnimatorSet set = new AnimatorSet();
-                    set.playTogether(actionAnim, nameAnim);
-                    anim = set;
-                }
-                anim.setInterpolator(OVERSHOOT);
-                if (!mInit) { // then follow user or invite contact
-                    anim.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator anim) {
-                            super.onAnimationEnd(anim);
-                            if (isUser) {
-                                Uri uri = ContentUris.withAppendedId(Contacts.CONTENT_URI, id);
-                                ContentValues vals = new ContentValues(2);
-                                vals.put(Contacts.FOLLOWING, isChecked);
-                                vals.put(Contacts.DIRTY, 1);
-                                a.startService(new Intent(ACTION_EDIT, uri, a, ContentService.class)
-                                        .putExtra(EXTRA_VALUES, vals));
-                                if (isChecked) {
-                                    a.startService(new Intent(a, ReviewsService.class)
-                                            .putExtra(EXTRA_ID, id));
-                                }
-                            } else if (isChecked) {
-                                sendInvite(Collections.singletonList(name));
+                friend.mAction.animate().withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mInit) {
+                            return;
+                        }
+                        if (isUser) { // follow
+                            String[] globalIds = globalId.split(",");
+                            ContentValues vals = new ContentValues(2);
+                            vals.put(Contacts.FOLLOWING, isChecked);
+                            vals.put(Contacts.DIRTY, 1);
+                            a.startService(new Intent(ACTION_EDIT, Contacts.CONTENT_URI,
+                                    a, ContentService.class).putExtra(EXTRA_VALUES, vals)
+                                    .putExtra(EXTRA_SELECTION,
+                                            in(Contacts.GLOBAL_ID, globalIds).toString()));
+                            if (isChecked) {
+                                a.startService(new Intent(a, ReviewsService.class)
+                                        .putExtra(EXTRA_GLOBAL_IDS, Elements.toLongs(globalIds)));
+                            }
+                            event("friend", isChecked ? "follow" : "unfollow");
+                        } else if (isChecked) { // invite
+                            String[] addrs = email.split("\t");
+                            if (addrs.length == 1) {
+                                sendInvite(addrs[0], FriendsFragment.this);
+                                event("friend", "invite");
+                            } else if (addrs.length > 1) {
+                                InviteFragment.newInstance(addrs).show(getFragmentManager(), null);
+                                event("friend", "invite [choose email address]");
                             }
                         }
-                    });
-                }
-                anim.start();
+                    }
+                }).translationX(0.0f).setInterpolator(OVERSHOOT);
             }
-        });
-        anim.start();
+        }).translationX(friend.mAction.getWidth()).setInterpolator(ANTICIPATE);
         mListener.onFriendClick(mGrid.getCheckedItemCount());
-    }
-
-    /**
-     * Update the name View with the new value and choose the style based on the parameters.
-     */
-    private void updateName(TextView view, String name, boolean isChecked, boolean isUser) {
-        if (isChecked && !isUser) { // inviting by email address
-            view.setText(name.replace("@", " @ ")); // word wrap before domain
-            view.setTextAppearance(a, R.style.Cell_Title_Small);
-        } else {
-            view.setText(name != null ? name : getString(R.string.non_contact));
-            view.setTextAppearance(a, R.style.Cell_Title);
-        }
     }
 
     /**
@@ -364,56 +341,71 @@ public class FriendsFragment extends SprocketsFragment
     }
 
     /**
-     * Get the IDs of contacts that are chosen to be followed.
+     * Get the global IDs of users that are chosen to be followed.
      *
      * @return null if none are checked
      */
-    long[] getFollowedFriends() {
-        if (mGrid.getCheckedItemCount() > 0) {
-            ArrayLongList ids = null;
-            int[] keys = SparseArrays.trueKeys(mGrid.getCheckedItemPositions());
-            for (int pos : keys) {
-                EasyCursor c = (EasyCursor) mGrid.getItemAtPosition(pos);
-                if (!c.isNull(Contacts.GLOBAL_ID)) {
-                    if (ids == null) {
-                        ids = new ArrayLongList(keys.length);
-                    }
-                    ids.add(c.getLong(_ID));
+    long[] getFollowed() {
+        if (mGrid.getCheckedItemCount() <= 0) {
+            return null;
+        }
+        ArrayLongList globalIds = null;
+        int[] keys = SparseArrays.trueKeys(mGrid.getCheckedItemPositions());
+        for (int pos : keys) {
+            EasyCursor c = (EasyCursor) mGrid.getItemAtPosition(pos);
+            if (!c.isNull(Contacts.GLOBAL_ID)) {
+                if (globalIds == null) {
+                    globalIds = new ArrayLongList();
+                }
+                String globalId = c.getString(Contacts.GLOBAL_ID);
+                if (globalId.indexOf(',') < 0) {
+                    globalIds.add(Long.parseLong(globalId));
+                } else {
+                    Elements.addAll(globalIds, Elements.toLongs(globalId.split(",")));
                 }
             }
-            return ids != null ? ids.toArray() : null;
         }
-        return null;
+        return globalIds != null ? globalIds.toArray() : null;
     }
 
     /**
      * Start an email app to send an invitation to selected contacts.
      */
     void invite() {
-        if (mGrid.getCheckedItemCount() > 0) {
-            List<String> to = null;
-            int[] keys = SparseArrays.trueKeys(mGrid.getCheckedItemPositions());
-            for (int pos : keys) {
-                EasyCursor c = (EasyCursor) mGrid.getItemAtPosition(pos);
-                if (c.isNull(Contacts.GLOBAL_ID)) {
-                    if (to == null) {
-                        to = new ArrayList<>(keys.length);
-                    }
-                    to.add(c.getString(Contacts.EMAIL));
+        if (mGrid.getCheckedItemCount() <= 0) {
+            return;
+        }
+        List<String> to = null;
+        int[] keys = SparseArrays.trueKeys(mGrid.getCheckedItemPositions());
+        for (int pos : keys) {
+            EasyCursor c = (EasyCursor) mGrid.getItemAtPosition(pos);
+            if (c.isNull(Contacts.GLOBAL_ID) && !c.isNull(Contacts.EMAIL)) {
+                if (to == null) {
+                    to = new ArrayList<>(keys.length);
+                }
+                String email = c.getString(Contacts.EMAIL);
+                if (!email.contains("\t")) {
+                    to.add(email);
+                } else {
+                    CollectionUtils.addAll(to, email.split("\t"));
                 }
             }
-            if (to != null) {
-                sendInvite(to);
-            }
+        }
+        if (to != null) {
+            sendInvite(to, this);
+            event("friends", "invite", to.size());
         }
     }
 
-    private void sendInvite(List<String> to) {
+    private static void sendInvite(String to, Fragment frag) {
+        sendInvite(Collections.singletonList(to), frag);
+    }
+
+    private static void sendInvite(List<String> to, Fragment frag) {
         Intent intent = new Intent(ACTION_SENDTO, Uris.mailto(to, null, null,
-                getString(R.string.invite_subject), getString(R.string.invite_body)));
-        if (Intents.hasActivity(a, intent)) {
-            startActivity(intent);
-            event("friends", "invite", to.size());
+                frag.getString(R.string.invite_subject), frag.getString(R.string.invite_body)));
+        if (Intents.hasActivity(frag.getActivity(), intent)) {
+            frag.startActivity(intent);
         }
     }
 
@@ -465,13 +457,13 @@ public class FriendsFragment extends SprocketsFragment
 
         @Override
         public void bindView(View view, Context context, ReadCursor c) {
-            final FriendHolder friend = ViewHolder.get(view, FriendHolder.class);
+            FriendHolder friend = ViewHolder.get(view, FriendHolder.class);
             /* load contact photo */
             String key = c.getString(Contacts.ANDROID_LOOKUP_KEY);
             long id = c.getLong(Contacts.ANDROID_ID);
             Uri uri = key != null && id > 0 ? ContactsContract.Contacts.getLookupUri(id, key)
                     : null;
-            final String name = c.getString(Contacts.NAME);
+            String name = c.getString(Contacts.NAME);
             Picasso.with(context).load(uri).resize(mGrid.getColumnWidth(), mCellHeight).centerCrop()
                     .transform(TL).placeholder(Placeholders.rect(c, name)).into(friend.mPhoto);
             /* select if user already following or deselect if unfollowed remotely */
@@ -480,25 +472,50 @@ public class FriendsFragment extends SprocketsFragment
                 mGrid.setItemChecked(c.getPosition(), c.getInt(Contacts.FOLLOWING) == 1);
             }
             boolean isChecked = mGrid.isItemChecked(c.getPosition());
-            String nameOrEmail = c.getString(isChecked && !isUser ? Contacts.EMAIL : Contacts.NAME);
-            updateName(friend.mName, nameOrEmail, isChecked, isUser);
+            friend.mName.setText(name != null ? name : getString(R.string.non_contact));
             updateAction(friend.mAction, isChecked, isUser);
         }
     }
 
     public static class FriendHolder extends ViewHolder {
-        @InjectView(R.id.photo)
+        @Bind(R.id.photo)
         ImageView mPhoto;
 
-        @InjectView(R.id.name)
+        @Bind(R.id.name)
         TextView mName;
 
-        @InjectView(R.id.action)
+        @Bind(R.id.action)
         TextView mAction;
 
         @Override
         protected FriendHolder newInstance() {
             return new FriendHolder();
+        }
+    }
+
+    /**
+     * Prompts the user to select one of their contact's email addresses and then sends the invite.
+     */
+    public static class InviteFragment extends SprocketsDialogFragment {
+        @Icicle
+        String[] mAddresses;
+
+        private static InviteFragment newInstance(String[] addresses) {
+            InviteFragment frag = new InviteFragment();
+            frag.mAddresses = addresses;
+            return frag;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new Builder(a).setTitle(R.string.send_invite_to)
+                    .setItems(mAddresses, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            sendInvite(mAddresses[which], InviteFragment.this);
+                            event("friend", "invite");
+                        }
+                    }).create();
         }
     }
 

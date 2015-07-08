@@ -27,8 +27,8 @@ import net.sf.diningout.content.SyncAdapter;
  * Provides a binder to the sync adapter.
  */
 public class SyncService extends Service {
-    private static SyncAdapter sAdapter;
     private static final Object LOCK = new Object();
+    private static SyncAdapter sAdapter;
 
     @Override
     public void onCreate() {

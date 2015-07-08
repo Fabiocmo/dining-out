@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 pushbit <pushbit@gmail.com>
+ * Copyright 2014-2015 pushbit <pushbit@gmail.com>
  * 
  * This file is part of Dining Out.
  * 
@@ -34,7 +34,7 @@ import net.sf.sprockets.view.inputmethod.InputMethods;
 import net.sf.sprockets.widget.GooglePlaceAutoComplete;
 import net.sf.sprockets.widget.GooglePlaceAutoComplete.OnPlaceClickListener;
 
-import butterknife.InjectView;
+import butterknife.Bind;
 import butterknife.OnClick;
 
 /**
@@ -42,8 +42,9 @@ import butterknife.OnClick;
  * attach this must implement {@link Listener}.
  */
 public class RestaurantAutocompleteFragment extends SprocketsFragment {
-    @InjectView(R.id.name)
+    @Bind(R.id.name)
     GooglePlaceAutoComplete mName;
+
     private Listener mListener;
 
     @Override

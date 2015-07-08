@@ -67,8 +67,10 @@ public class RestaurantGeofencingEventService extends IntentService {
         boolean showNotif = Prefs.getStringSet(this, SHOW_NOTIFICATIONS)
                 .contains(getString(R.string.at_restaurant_notifications_value));
         List<Geofence> geofences = event.getTriggeringGeofences();
-        List<String> removeIds = new ArrayList<>(geofences.size());
-        for (Geofence geofence : geofences) {
+        int size = geofences.size();
+        List<String> removeIds = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            Geofence geofence = geofences.get(i);
             String requestId = geofence.getRequestId();
             if (showNotif) {
                 long restaurantId = Long.parseLong(requestId);

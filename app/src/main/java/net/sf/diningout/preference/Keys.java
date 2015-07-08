@@ -17,8 +17,9 @@
 
 package net.sf.diningout.preference;
 
-import android.text.TextUtils;
+import android.content.Context;
 
+import net.sf.diningout.R;
 import net.sf.sprockets.preference.Prefs;
 import net.sf.sprockets.util.Locales;
 import net.sf.sprockets.util.MeasureUnit;
@@ -56,8 +57,9 @@ public class Keys {
      * True if distances should be displayed in the unit.
      */
     public static boolean isDistanceUnit(MeasureUnit unit) {
-        String pref = Prefs.getString(context(), DISTANCE_UNIT);
-        if (TextUtils.isEmpty(pref)) {
+        Context context = context();
+        String pref = Prefs.getString(context, DISTANCE_UNIT);
+        if (pref.equals(context.getString(R.string.automatic_value))) {
             pref = Locales.getDistanceUnit().getSubtype();
         }
         return pref.equals(unit.getSubtype());

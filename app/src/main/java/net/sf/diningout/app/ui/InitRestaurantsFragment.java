@@ -51,7 +51,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import butterknife.InjectView;
+import butterknife.Bind;
 import in.srain.cube.views.GridViewWithHeaderAndFooter;
 
 import static android.view.View.GONE;
@@ -69,10 +69,10 @@ import static net.sf.sprockets.google.Places.Response.Status.OK;
  */
 public class InitRestaurantsFragment extends SprocketsFragment
         implements LoaderCallbacks<Response<List<Place>>>, OnItemClickListener, OnScrollListener {
-    @InjectView(R.id.progress)
+    @Bind(R.id.progress)
     View mProgress;
 
-    @InjectView(R.id.list)
+    @Bind(R.id.list)
     GridViewWithHeaderAndFooter mGrid;
 
     private GooglePlacesAdapter mAdapter;
@@ -201,7 +201,7 @@ public class InitRestaurantsFragment extends SprocketsFragment
      *
      * @return null if none are checked
      */
-    Place[] getCheckedRestaurants() {
+    Place[] getChecked() {
         if (mGrid.getCheckedItemCount() > 0) {
             int[] keys = SparseArrays.trueKeys(mGrid.getCheckedItemPositions());
             Place[] places = new Place[keys.length];

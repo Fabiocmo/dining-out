@@ -17,18 +17,15 @@
 
 package net.sf.diningout.app;
 
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 
 import com.google.android.gms.analytics.GoogleAnalytics;
-import com.google.android.gms.analytics.Tracker;
 
 import net.sf.diningout.R;
-import net.sf.diningout.accounts.Accounts;
 import net.sf.sprockets.app.VersionedApplication;
 import net.sf.sprockets.gms.analytics.Trackers;
 import net.sf.sprockets.preference.Prefs;
@@ -49,8 +46,8 @@ import static net.sf.diningout.preference.Keys.App.LAST_SYNC;
 import static net.sf.diningout.preference.Keys.App.MIGRATE_TO_PLACE_ID;
 import static net.sf.diningout.preference.Keys.App.NAVIGATION_DRAWER_OPENED;
 import static net.sf.diningout.preference.Keys.App.ONBOARDED;
+import static net.sf.diningout.preference.Keys.DISTANCE_UNIT;
 import static net.sf.diningout.preference.Keys.SHOW_NOTIFICATIONS;
-import static net.sf.diningout.provider.Contract.AUTHORITY;
 
 /**
  * Performs application update tasks.
@@ -65,9 +62,7 @@ public class AppApplication extends VersionedApplication {
         if (!Prefs.getBoolean(this, ALLOW_ANALYTICS)) {
             ga.setAppOptOut(true);
         }
-        Tracker tracker = ga.newTracker(R.xml.tracker);
-        tracker.set("&tid", TRACKING_ID);
-        Trackers.use(this, tracker);
+        Trackers.use(this, ga.newTracker(R.xml.tracker)).set("&tid", TRACKING_ID);
         /* start migration tasks */
         if (Prefs.getBoolean(this, APP, MIGRATE_TO_PLACE_ID)) {
             startService(new Intent(this, RestaurantsPlaceIdService.class));
@@ -83,10 +78,7 @@ public class AppApplication extends VersionedApplication {
             Prefs.putStringSet(this, SHOW_NOTIFICATIONS, notifs);
             migrateAppPrefs();
         }
-        if (Prefs.contains(this, APP, CLOUD_ID)) { // need to re-register
-            Prefs.remove(this, APP, CLOUD_ID);
-            ContentResolver.requestSync(Accounts.selected(), AUTHORITY, new Bundle());
-        }
+        TokenService.refreshTokens(this);
         if (oldCode < 100) { // delete pre-1.0.0 restaurant images
             File file = getExternalFilesDir(null);
             if (file != null) {
@@ -108,6 +100,9 @@ public class AppApplication extends VersionedApplication {
         }
         if (oldCode < 112) {
             startService(new Intent(this, ContactNormalisedNameService.class));
+        }
+        if (oldCode < 113 && TextUtils.isEmpty(Prefs.getString(this, DISTANCE_UNIT))) {
+            Prefs.putString(this, DISTANCE_UNIT, getString(R.string.automatic_value));
         }
     }
 
