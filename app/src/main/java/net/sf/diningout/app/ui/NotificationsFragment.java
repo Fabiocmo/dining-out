@@ -126,7 +126,7 @@ public class NotificationsFragment extends SprocketsFragment
         String[] selArgs = Elements.toStrings(REVIEW.id, ACTIVE.id, ACTIVE.id, USER.id, ACTIVE.id);
         Uri uri = Uris.groupBy(SyncsJoinAll.CONTENT_URI,
                 SyncsJoinAll.RESTAURANT__ID + ", " + SyncsJoinAll.CONTACT__ID);
-        String order = Syncs.ACTION_ON + " DESC";
+        String order = Syncs._ID + " DESC";
         return new EasyCursorLoader(a, uri, proj, sel, selArgs, order);
     }
 

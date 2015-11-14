@@ -37,7 +37,7 @@ import net.sf.sprockets.content.Content.Query;
 import net.sf.sprockets.database.Cursors;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.google.Place;
-import net.sf.sprockets.google.Place.Id.Filter;
+import net.sf.sprockets.google.Place.Prediction;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.sql.SQLite;
 
@@ -84,12 +84,11 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        Filter filter = null;
+        String[] ids = Cursors.allStrings(data, false);
         if (data.getCount() > 0) {
-            filter = new Filter().exclude(Cursors.allStrings(data, false));
-            autocomplete().mName.setPlaceFilter(filter);
+            autocomplete().mName.setPredictionFilter(Prediction.IdFilter.create().addIds(ids));
         }
-        nearby().filter(filter);
+        nearby().filter(Place.IdFilter.create().addIds(ids));
     }
 
     @Override
@@ -107,7 +106,7 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
                     return true;
                 }
                 /* check for existing Google place, update or insert new */
-                EasyCursor c = new EasyCursor(this, new Query().uri(Restaurants.CONTENT_URI)
+                EasyCursor c = new EasyCursor(this, Query.create().uri(Restaurants.CONTENT_URI)
                         .proj(_ID, Restaurants.STATUS_ID)
                         .sel(Restaurants.PLACE_ID + " = ?").args(mPlaceId));
                 long id = 0L;
@@ -155,8 +154,8 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
     }
 
     @Override
-    public void onRestaurantAutocomplete(Place place) {
-        set(place, "autocomplete");
+    public void onRestaurantAutocomplete(Prediction place) {
+        set(place.getPlaceId().getId(), place.getDescription(), "autocomplete");
     }
 
     @Override
@@ -168,12 +167,13 @@ public class RestaurantAddActivity extends BaseNavigationDrawerActivity
     @Override
     public void onRestaurantClick(Place place) {
         autocomplete().mName.setText(null);
-        set(place, TextUtils.isEmpty(nearby().mSearch) ? "nearby" : "search result");
+        set(place.getPlaceId().getId(), place.getName(),
+                TextUtils.isEmpty(nearby().mSearch) ? "nearby" : "search result");
     }
 
-    private void set(Place place, String source) {
-        mPlaceId = place.getPlaceId().getId();
-        mName = place.getName();
+    private void set(String placeId, String name, String source) {
+        mPlaceId = placeId;
+        mName = name;
         mSource = source;
         setTitle(getString(R.string.add_s, mName));
     }

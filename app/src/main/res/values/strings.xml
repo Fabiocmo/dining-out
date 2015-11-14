@@ -94,6 +94,7 @@
     <string name="nearby_title">Nearby</string>
     <string name="search_results_title">Search results</string>
     <string name="search_results_empty">&lt;b>%s&lt;/b> didn’t match any restaurants.</string>
+    <string name="none_found">None found in your area.</string>
 
     <!-- friends -->
     <string name="friends_title">Friends</string>
@@ -152,7 +153,7 @@
     <!-- notifications (system) -->
     <string name="new_friend">%s is Dining Out</string>
     <string name="new_friend_review">%1$s at %2$s</string>
-    <string name="new_public_review">Public review of %s</string>
+    <string name="new_public_review">Review of %s</string>
     <string name="sync_item">• %s\n</string>
     <string name="n_stars">★%d</string>
     <string name="ignore_restaurant">Ignore restaurant</string>

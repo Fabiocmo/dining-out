@@ -34,7 +34,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import net.sf.diningout.R;
-import net.sf.diningout.provider.Contract.Restaurants;
 import net.sf.diningout.widget.PoweredByGoogle;
 import net.sf.diningout.widget.RestaurantPlacesAdapter;
 import net.sf.sprockets.app.ui.SprocketsFragment;
@@ -57,11 +56,12 @@ import in.srain.cube.views.GridViewWithHeaderAndFooter;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 import static com.google.common.base.Predicates.notNull;
+import static net.sf.diningout.provider.Contract.Restaurants.SEARCH_FIELDS;
 import static net.sf.diningout.provider.Contract.Restaurants.SEARCH_RADIUS;
 import static net.sf.diningout.provider.Contract.Restaurants.SEARCH_TYPES;
 import static net.sf.sprockets.gms.analytics.Trackers.event;
-import static net.sf.sprockets.google.Places.Request.NEARBY_SEARCH;
-import static net.sf.sprockets.google.Places.Response.Status.OK;
+import static net.sf.sprockets.google.Places.Response.STATUS_OK;
+import static net.sf.sprockets.google.Places.URL_NEARBY_SEARCH;
 
 /**
  * Displays a list of local restaurants for the user to choose from. Activities that attach this
@@ -130,15 +130,15 @@ public class InitRestaurantsFragment extends SprocketsFragment
         Params params = null;
         if (id == 0) { // get the first batch of restaurants
             mProgress.setVisibility(VISIBLE);
-            params = new LocalPlacesParams(a).radius(SEARCH_RADIUS).types(SEARCH_TYPES);
+            params = new LocalPlacesParams(a).radius(SEARCH_RADIUS).addTypes(SEARCH_TYPES);
         } else { // get another batch if available
             String token = mTokens[id - 1];
             if (!TextUtils.isEmpty(token)) {
-                params = new Params().pageToken(token);
+                params = Params.create().pageToken(token);
                 mTokens[id - 1] = null; // reset so not used again
             }
         }
-        return new GooglePlacesLoader<>(a, NEARBY_SEARCH, params, Restaurants.searchFields());
+        return new GooglePlacesLoader<>(a, URL_NEARBY_SEARCH, params, SEARCH_FIELDS);
     }
 
     @Override
@@ -146,7 +146,7 @@ public class InitRestaurantsFragment extends SprocketsFragment
         if (mGrid == null) {
             return;
         }
-        if (resp != null && resp.getStatus() == OK) {
+        if (resp != null && STATUS_OK.equals(resp.getStatus())) {
             int id = loader.getId();
             mPlaces.set(id, resp.getResult());
             mAdapter.swapPlaces(

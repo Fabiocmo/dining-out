@@ -66,7 +66,8 @@ public class PoweredByGoogle extends RelativeLayout {
      * @param attribs may be null to clear
      */
     public PoweredByGoogle setHtmlAttributions(List<String> attribs) {
-        mAttribs.setText(attribs != null ? Html.fromHtml(attribs.get(0)).toString() : null);
+        mAttribs.setText(attribs != null && !attribs.isEmpty()
+                ? Html.fromHtml(attribs.get(0)).toString() : null);
         return this;
     }
 }

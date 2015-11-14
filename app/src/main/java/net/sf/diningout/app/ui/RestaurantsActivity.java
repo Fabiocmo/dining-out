@@ -27,6 +27,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.util.SimpleArrayMap;
 import android.support.v4.widget.DrawerLayout;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
@@ -265,8 +266,8 @@ public class RestaurantsActivity extends BaseNavigationDrawerActivity
     @Override
     public void onRestaurantsSearch(String query) {
         if (mDrawerLayout != null) {
-            mDrawerLayout.setDrawerLockMode(
-                    query.length() > 0 ? LOCK_MODE_LOCKED_CLOSED : LOCK_MODE_UNLOCKED, START);
+            mDrawerLayout.setDrawerLockMode(!TextUtils.isEmpty(query)
+                    ? LOCK_MODE_LOCKED_CLOSED : LOCK_MODE_UNLOCKED, START);
         }
     }
 

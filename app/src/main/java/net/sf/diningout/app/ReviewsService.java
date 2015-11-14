@@ -52,7 +52,10 @@ public class ReviewsService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        download(intent.getLongArrayExtra(EXTRA_GLOBAL_IDS));
+        long[] ids = intent.getLongArrayExtra(EXTRA_GLOBAL_IDS);
+        if (ids != null) { // shouldn't ever be null, but somehow was in production
+            download(ids);
+        }
     }
 
     /**

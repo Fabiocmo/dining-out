@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 pushbit <pushbit@gmail.com>
+ * Copyright 2013-2015 pushbit <pushbit@gmail.com>
  *
  * This file is part of Dining Out.
  *
@@ -47,8 +47,13 @@ public class RestaurantPlacesAdapter extends GooglePlacesAdapter {
                     .inflate(R.layout.restaurants_adapter, parent, false);
         }
         String url = RestaurantPhotos.url(place, mView.getColumnWidth(), mCellHeight);
-        ViewHolder.get(view, RestaurantHolder.class)
-                .photo(url, mView).name(place.getName()).rating(place.getRating());
+        RestaurantHolder holder = ViewHolder.get(view, RestaurantHolder.class).photo(url, mView)
+                .name(place.getName());
+        if (position == mView.getCheckedItemPosition()) {
+            holder.address(place.getVicinity());
+        } else {
+            holder.rating(place.getRating());
+        }
         return view;
     }
 }

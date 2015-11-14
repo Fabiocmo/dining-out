@@ -53,7 +53,7 @@ public class RestaurantsRefreshService extends IntentService {
                 + Restaurants.STATUS_ID + " = ?";
         String[] args = {String.valueOf(ACTIVE.id)};
         Cursor c = cr().query(Restaurants.CONTENT_URI, proj, sel, args, null);
-        try {
+        try { // can try with resources when min API level 19
             refresh(new EasyCursor(c));
         } catch (IOException e) {
             Log.e(TAG, "refreshing restaurants", e);

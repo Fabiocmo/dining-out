@@ -211,9 +211,9 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
                         Restaurants.URL, Restaurants.COLOR, Restaurants.GEOFENCE_NOTIFICATIONS};
                 return new EasyCursorLoader(a, uri, proj, null, null, null);
             case LOAD_HOURS:
-                Query q = new Query().uri(OpenDays.CONTENT_URI);
-                q.proj(OpenDays.DAY + " AS " + _ID, OpenDays.HOURS);
-                q.sel(OpenDays.RESTAURANT_ID + " = ?").args(mId).order(OpenDays.DAY);
+                Query q = Query.create().uri(OpenDays.CONTENT_URI)
+                        .proj(OpenDays.DAY + " AS " + _ID, OpenDays.HOURS)
+                        .sel(OpenDays.RESTAURANT_ID + " = ?").args(mId).order(OpenDays.DAY);
                 return new EasyCursorLoader(a, q).tagWith(new Callable<Boolean>() {
                     @Override
                     public Boolean call() throws Exception {
@@ -592,7 +592,7 @@ public class RestaurantFragment extends SprocketsFragment implements LoaderCallb
                         List<Substring> terms = place.getTerms();
                         if (terms.size() > 2) {
                             Substring term = terms.get(1);
-                            mEditAddress.setText(place.getName()
+                            mEditAddress.setText(place.getDescription()
                                     .substring(0, term.getOffset() + term.getLength()));
                         }
                     }

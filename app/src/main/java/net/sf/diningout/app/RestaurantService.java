@@ -49,7 +49,6 @@ import net.sf.sprockets.google.Place;
 import net.sf.sprockets.google.Places;
 import net.sf.sprockets.google.Places.Params;
 import net.sf.sprockets.google.Places.Response;
-import net.sf.sprockets.google.Places.Response.Status;
 import net.sf.sprockets.net.HttpClient;
 import net.sf.sprockets.net.Uris;
 import net.sf.sprockets.sql.SQLite;
@@ -68,13 +67,14 @@ import static net.sf.diningout.data.Status.DELETED;
 import static net.sf.diningout.provider.Contract.AUTHORITY_URI;
 import static net.sf.diningout.provider.Contract.CALL_UPDATE_RESTAURANT_LAST_VISIT;
 import static net.sf.diningout.provider.Contract.CALL_UPDATE_RESTAURANT_RATING;
+import static net.sf.diningout.provider.Contract.Restaurants.DETAILS_FIELDS;
 import static net.sf.sprockets.app.SprocketsApplication.context;
 import static net.sf.sprockets.app.SprocketsApplication.cr;
 import static net.sf.sprockets.app.SprocketsApplication.res;
 import static net.sf.sprockets.gms.analytics.Trackers.event;
 import static net.sf.sprockets.gms.analytics.Trackers.exception;
-import static net.sf.sprockets.google.Places.Response.Status.NOT_FOUND;
-import static net.sf.sprockets.google.Places.Response.Status.OK;
+import static net.sf.sprockets.google.Places.Response.STATUS_NOT_FOUND;
+import static net.sf.sprockets.google.Places.Response.STATUS_OK;
 import static net.sf.sprockets.io.MoreFiles.DOT_PART;
 
 /**
@@ -125,7 +125,7 @@ public class RestaurantService extends IntentService {
                 ContentValues vals = new ContentValues(14);
                 vals.put(Restaurants.PLACE_ID, restaurant.placeId);
                 result = details(id, vals);
-                if (result.status == NOT_FOUND) {
+                if (STATUS_NOT_FOUND.equals(result.status)) {
                     return result;
                 }
                 if (result.place != null) {
@@ -198,10 +198,10 @@ public class RestaurantService extends IntentService {
         }
         ContentResolver cr = cr();
         Response<Place> resp =
-                Places.details(new Params().placeId(placeId), Restaurants.detailsFields());
+                Places.details(Params.create().placeId(placeId), DETAILS_FIELDS);
         result.status = resp.getStatus();
         result.place = resp.getResult();
-        if (result.status == OK && result.place != null) {
+        if (STATUS_OK.equals(result.status) && result.place != null) {
             try { // while place_id has UNIQUE constraint
                 cr.update(ContentUris.withAppendedId(Restaurants.CONTENT_URI, id),
                         Restaurants.values(vals, result.place), null, null);
@@ -211,7 +211,7 @@ public class RestaurantService extends IntentService {
             }
             /* insert/update reviews */
             List<Place.Review> reviews = result.place.getReviews();
-            if (reviews != null) {
+            if (!reviews.isEmpty()) {
                 Uri uri = Reviews.CONTENT_URI;
                 /* get time of latest review */
                 String[] proj = {SQLite.millis("max", Reviews.WRITTEN_ON)};
@@ -222,8 +222,7 @@ public class RestaurantService extends IntentService {
                 ContentValues reviewVals = new ContentValues();
                 sel += " AND " + Reviews.WRITTEN_ON + " = ?";
                 args = Arrays.copyOf(args, 3);
-                int size = reviews.size();
-                for (int i = 0; i < size; i++) {
+                for (int i = 0, size = reviews.size(); i < size; i++) {
                     Place.Review review = reviews.get(i);
                     Reviews.values(reviewVals, id, review);
                     if (reviewVals.size() > 0) {
@@ -270,7 +269,7 @@ public class RestaurantService extends IntentService {
                 }
             }
         } else {
-            if (result.status == NOT_FOUND) {
+            if (STATUS_NOT_FOUND.equals(result.status)) {
                 vals.clear();
                 vals.put(Restaurants.PLACE_ID, "NOT_FOUND_" + id);
                 vals.put(Restaurants.REFRESHED_ON, SQLite.datetime());
@@ -281,7 +280,7 @@ public class RestaurantService extends IntentService {
                 deleteHours(cr, restaurantId); // so users don't think it's still open
             }
             Log.e(TAG, "Places.details failed, status: " + result.status);
-            event("restaurant", "Places.details failed", result.status.toString());
+            event("restaurant", "Places.details failed", result.status);
         }
         return result;
     }
@@ -379,7 +378,7 @@ public class RestaurantService extends IntentService {
      * was not successful or the Place didn't contain the properties.
      */
     public static class Result {
-        public Status status;
+        public String status;
         public Place place;
         public LongSparseArray<String> newReviewTimes;
         public long photoId;

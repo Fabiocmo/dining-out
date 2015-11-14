@@ -38,11 +38,11 @@ import butterknife.Bind;
 
 import static android.text.format.DateUtils.FORMAT_ABBREV_ALL;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
 import static net.sf.diningout.picasso.Transformations.BL;
 import static net.sf.sprockets.app.SprocketsApplication.context;
 import static net.sf.sprockets.util.MeasureUnit.MILE;
+import static net.sf.sprockets.view.animation.Interpolators.ANTICIPATE;
+import static net.sf.sprockets.view.animation.Interpolators.OVERSHOOT;
 
 /**
  * Views for a restaurant in a list and methods to update their contents.
@@ -57,6 +57,7 @@ public class RestaurantHolder extends ViewHolder {
     @Bind(R.id.detail)
     public TextView detail;
 
+    private boolean detailIsAddress;
     private final Context mContext;
     private final int mCellHeight;
 
@@ -107,12 +108,13 @@ public class RestaurantHolder extends ViewHolder {
     RestaurantHolder rating(float rating) {
         if (rating > 0.0f) {
             detail.setText(mContext.getString(R.string.rating, rating));
-            detail.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_action_important_small, 0,
-                    0, 0);
-            detail.setVisibility(VISIBLE);
+            detail.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_action_important_small,
+                    0, 0, 0);
         } else {
-            detail.setVisibility(GONE);
+            detail.setText(" "); // need some text so animations will run
+            detail.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
         }
+        detailIsAddress = false;
         return this;
     }
 
@@ -131,7 +133,7 @@ public class RestaurantHolder extends ViewHolder {
             detail.setText(R.string.never);
         }
         detail.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_action_time_small, 0, 0, 0);
-        detail.setVisibility(VISIBLE);
+        detailIsAddress = false;
         return this;
     }
 
@@ -144,9 +146,37 @@ public class RestaurantHolder extends ViewHolder {
                     : R.string.distance_km, distance));
             detail.setCompoundDrawablesWithIntrinsicBounds(
                     R.drawable.ic_action_location_found_small, 0, 0, 0);
-            detail.setVisibility(VISIBLE);
         } else {
-            detail.setVisibility(GONE);
+            detail.setText(" ");
+            detail.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+        }
+        detailIsAddress = false;
+        return this;
+    }
+
+    /**
+     * Set the restaurant's address.
+     */
+    public RestaurantHolder address(String address) {
+        detail.setText(address);
+        detail.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+        detailIsAddress = true;
+        return this;
+    }
+
+    /**
+     * If the address is not already showing, animate the current detail out and the address in.
+     */
+    public RestaurantHolder animateAddress(final String address) {
+        if (!detailIsAddress) {
+            detail.animate().translationX(detail.getWidth()).setInterpolator(ANTICIPATE)
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            address(address);
+                            detail.animate().translationX(0.0f).setInterpolator(OVERSHOOT);
+                        }
+                    });
         }
         return this;
     }

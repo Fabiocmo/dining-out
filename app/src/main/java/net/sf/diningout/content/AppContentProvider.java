@@ -39,6 +39,7 @@ import net.sf.diningout.provider.Contract.ReviewsJoinRestaurants;
 import net.sf.diningout.provider.Contract.Syncs;
 import net.sf.diningout.provider.Contract.SyncsJoinAll;
 import net.sf.sprockets.content.DbContentProvider;
+import net.sf.sprockets.content.MutableSql;
 import net.sf.sprockets.database.sqlite.DbOpenHelper;
 
 import java.io.File;
@@ -118,22 +119,22 @@ public class AppContentProvider extends DbContentProvider {
     }
 
     @Override
-    protected Sql translate(Uri uri) {
+    protected MutableSql translate(Uri uri) {
         int code = sMatcher.match(uri);
         if (code >= 0) {
-            Sql sql = new Sql();
+            MutableSql sql = Sql.create();
             switch (code) {
                 case REVIEW_JOIN_RESTAURANT_ID:
                     sql.sel(ReviewsJoinRestaurants.REVIEW__ID + " = ?");
                 case REVIEWS_JOIN_RESTAURANTS:
                     sql.table("review AS w").join("JOIN restaurant AS r ON w.restaurant_id = r._id")
-                            .notify(Reviews.CONTENT_URI);
+                            .notifyUri(Reviews.CONTENT_URI);
                     break;
                 case REVIEW_JOIN_CONTACT_ID:
                     sql.sel(ReviewsJoinContacts.REVIEW__ID + " = ?");
                 case REVIEWS_JOIN_CONTACTS:
                     sql.table("review AS w").join("LEFT JOIN contact AS c ON w.contact_id = c._id")
-                            .notify(Reviews.CONTENT_URI);
+                            .notifyUri(Reviews.CONTENT_URI);
                     break;
                 case REVIEW_JOIN_ALL_ID:
                     sql.sel(ReviewsJoinAll.REVIEW__ID + " = ?");
@@ -141,14 +142,14 @@ public class AppContentProvider extends DbContentProvider {
                     sql.table("review AS w")
                             .join("JOIN restaurant AS r ON w.restaurant_id = r._id "
                                     + "LEFT JOIN contact AS c ON w.contact_id = c._id")
-                            .notify(Reviews.CONTENT_URI);
+                            .notifyUri(Reviews.CONTENT_URI);
                     break;
                 case REVIEW_DRAFT_JOIN_RESTAURANT_ID:
                     sql.sel(ReviewDrafts.RESTAURANT_ID + " = ?");
                 case REVIEW_DRAFTS_JOIN_RESTAURANTS:
                     sql.table("review_draft AS d")
                             .join("JOIN restaurant AS r ON d.restaurant_id = r._id")
-                            .notify(ReviewDrafts.CONTENT_URI);
+                            .notifyUri(ReviewDrafts.CONTENT_URI);
                     break;
                 case SYNC_JOIN_ALL_ID:
                     sql.sel(SyncsJoinAll.SYNC__ID + " = ?");
@@ -158,7 +159,7 @@ public class AppContentProvider extends DbContentProvider {
                             + "LEFT JOIN restaurant AS r ON w.restaurant_id = r._id "
                             + "LEFT JOIN contact AS c ON s.type_id = 1 AND s.object_id = c._id "
                             + "OR s.type_id = 4 AND w.contact_id = c._id");
-                    sql.notify(Syncs.CONTENT_URI);
+                    sql.notifyUri(Syncs.CONTENT_URI);
                     break;
             }
             return sql;

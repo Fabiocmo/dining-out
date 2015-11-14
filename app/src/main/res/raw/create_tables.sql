@@ -40,8 +40,6 @@ CREATE TABLE restaurant (
     _id INTEGER PRIMARY KEY AUTOINCREMENT,
     global_id INTEGER UNIQUE,
     place_id TEXT UNIQUE, -- future: remove unique, create index
-    google_id TEXT UNIQUE, -- deprecated
-    google_reference TEXT, -- deprecated
     google_url TEXT,
     name TEXT NOT NULL COLLATE LOCALIZED,
     normalised_name TEXT NOT NULL COLLATE LOCALIZED,

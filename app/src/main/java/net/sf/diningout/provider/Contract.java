@@ -47,8 +47,7 @@ import net.sf.sprockets.google.Place;
 import net.sf.sprockets.google.Place.OpeningHours;
 import net.sf.sprockets.google.Place.Photo;
 import net.sf.sprockets.google.Places;
-import net.sf.sprockets.google.Places.Field;
-import net.sf.sprockets.google.Places.Params;
+import net.sf.sprockets.google.PlacesParams;
 import net.sf.sprockets.google.StreetView;
 import net.sf.sprockets.graphics.Colors;
 import net.sf.sprockets.lang.Maths;
@@ -91,17 +90,18 @@ import static net.sf.sprockets.app.SprocketsApplication.context;
 import static net.sf.sprockets.app.SprocketsApplication.cr;
 import static net.sf.sprockets.app.SprocketsApplication.res;
 import static net.sf.sprockets.gms.analytics.Trackers.exception;
-import static net.sf.sprockets.google.Places.Field.FORMATTED_ADDRESS;
-import static net.sf.sprockets.google.Places.Field.FORMATTED_OPENING_HOURS;
-import static net.sf.sprockets.google.Places.Field.FORMATTED_PHONE_NUMBER;
-import static net.sf.sprockets.google.Places.Field.GEOMETRY;
-import static net.sf.sprockets.google.Places.Field.INTL_PHONE_NUMBER;
-import static net.sf.sprockets.google.Places.Field.OPENING_HOURS;
-import static net.sf.sprockets.google.Places.Field.PHOTOS;
-import static net.sf.sprockets.google.Places.Field.PRICE_LEVEL;
-import static net.sf.sprockets.google.Places.Field.REVIEWS;
-import static net.sf.sprockets.google.Places.Field.WEBSITE;
-import static net.sf.sprockets.google.Places.Request.PHOTO;
+import static net.sf.sprockets.google.Places.FIELD_FORMATTED_ADDRESS;
+import static net.sf.sprockets.google.Places.FIELD_FORMATTED_OPENING_HOURS;
+import static net.sf.sprockets.google.Places.FIELD_FORMATTED_PHONE_NUMBER;
+import static net.sf.sprockets.google.Places.FIELD_INTL_PHONE_NUMBER;
+import static net.sf.sprockets.google.Places.FIELD_NAME;
+import static net.sf.sprockets.google.Places.FIELD_OPENING_HOURS;
+import static net.sf.sprockets.google.Places.FIELD_PHOTOS;
+import static net.sf.sprockets.google.Places.FIELD_REVIEWS;
+import static net.sf.sprockets.google.Places.FIELD_URL;
+import static net.sf.sprockets.google.Places.FIELD_VICINITY;
+import static net.sf.sprockets.google.Places.FIELD_WEBSITE;
+import static net.sf.sprockets.google.Places.URL_PHOTO;
 import static net.sf.sprockets.io.MoreFiles.DOT_PART;
 import static net.sf.sprockets.util.MeasureUnit.KILOMETER;
 import static net.sf.sprockets.util.MeasureUnit.MILE;
@@ -434,22 +434,6 @@ public class Contract {
         String PLACE_ID = "place_id";
 
         /**
-         * Google's ID for the restaurant. Null if it's not a Google Place.
-         *
-         * @deprecated use {@link #PLACE_ID} instead
-         */
-        @Deprecated
-        String GOOGLE_ID = "google_id";
-
-        /**
-         * Token used to get the details of the restaurant. Null if it's not a Google Place.
-         *
-         * @deprecated use {@link #PLACE_ID} instead
-         */
-        @Deprecated
-        String GOOGLE_REFERENCE = "google_reference";
-
-        /**
          * Google's web page for the restaurant. Null if it's not a Google Place.
          */
         String GOOGLE_URL = "google_url";
@@ -627,26 +611,11 @@ public class Contract {
             return Colors.dark();
         }
 
-        private static final Field[] sSearchFields = {GEOMETRY, Field.NAME, Field.RATING, PHOTOS};
-
-        /**
-         * Get the fields that should be requested in {@link Places} search methods.
-         */
-        public static Field[] searchFields() {
-            return sSearchFields.clone();
-        }
-
-        private static final Field[] sDetailsFields = {Field.URL, GEOMETRY, Field.NAME,
-                FORMATTED_ADDRESS, Field.VICINITY, INTL_PHONE_NUMBER, FORMATTED_PHONE_NUMBER,
-                WEBSITE, PRICE_LEVEL, Field.RATING, REVIEWS, OPENING_HOURS, FORMATTED_OPENING_HOURS,
-                PHOTOS};
-
-        /**
-         * Get the fields that should be requested in {@link Places#details(Params, Field...)}.
-         */
-        public static Field[] detailsFields() {
-            return sDetailsFields.clone();
-        }
+        public static final int SEARCH_FIELDS = FIELD_NAME | FIELD_VICINITY | FIELD_PHOTOS;
+        public static final int DETAILS_FIELDS = FIELD_URL | FIELD_NAME | FIELD_FORMATTED_ADDRESS
+                | FIELD_VICINITY | FIELD_INTL_PHONE_NUMBER | FIELD_FORMATTED_PHONE_NUMBER
+                | FIELD_WEBSITE | FIELD_REVIEWS | FIELD_OPENING_HOURS
+                | FIELD_FORMATTED_OPENING_HOURS | FIELD_PHOTOS;
 
         /**
          * Get values from the place.
@@ -872,7 +841,7 @@ public class Contract {
          */
         public static ContentValues[] values(long restaurantId, Place place) {
             List<OpeningHours> hours = place.getOpeningHours();
-            if (hours != null) {
+            if (!hours.isEmpty()) {
                 int size = hours.size();
                 List<ContentValues> vals = new ArrayList<>(size * 2); // open + close
                 for (int i = 0; i < size; i++) {
@@ -943,9 +912,9 @@ public class Contract {
          */
         public static ContentValues[] values(long restaurantId, Place place) {
             List<String> days = place.getFormattedOpeningHours();
-            if (days != null) {
+            if (!days.isEmpty()) {
                 ContentValues[] vals = new ContentValues[days.size()];
-                for (int i = 0; i < vals.length; i++) {
+                for (int i = 0, length = vals.length; i < length; i++) {
                     ContentValues val = new ContentValues(3);
                     val.put(RESTAURANT_ID, restaurantId);
                     val.put(DAY, i);
@@ -1027,7 +996,7 @@ public class Contract {
          */
         public static ContentValues[] values(long restaurantId, Place place) {
             List<Photo> photos = place.getPhotos();
-            return photos != null ? values(new ContentValues[photos.size()], restaurantId, place)
+            return !photos.isEmpty() ? values(new ContentValues[photos.size()], restaurantId, place)
                     : null;
         }
 
@@ -1039,8 +1008,8 @@ public class Contract {
          */
         public static ContentValues[] values(ContentValues[] vals, long restaurantId, Place place) {
             List<Photo> photos = place.getPhotos();
-            int size = photos != null ? photos.size() : 0;
-            for (int i = 0; i < vals.length; i++) {
+            int size = photos.size();
+            for (int i = 0, length = vals.length; i < length; i++) {
                 if (i < size) {
                     Photo photo = photos.get(i);
                     if (vals[i] == null) {
@@ -1063,9 +1032,9 @@ public class Contract {
          */
         public static String url(Place place, int targetWidth, int targetHeight) {
             List<Photo> photos = place.getPhotos();
-            if (photos != null) {
+            if (!photos.isEmpty()) {
                 Photo photo = photos.get(0);
-                Params params = new Places.Params().reference(photo.getReference());
+                PlacesParams params = Places.Params.create().reference(photo.getReference());
                 /* limit width or height depending on how it will fit in the target */
                 int width = photo.getWidth();
                 int height = photo.getHeight();
@@ -1078,7 +1047,7 @@ public class Contract {
                 } else {
                     params.maxWidth(targetWidth).maxHeight(targetHeight);
                 }
-                return params.format(PHOTO);
+                return params.format(URL_PHOTO);
             } else {
                 return url(place.getLatitude(), place.getLongitude(), targetWidth, targetHeight);
             }
@@ -1089,8 +1058,8 @@ public class Contract {
          * and height in pixels.
          */
         public static String url(double lat, double lng, int targetWidth, int targetHeight) {
-            return new StreetView.Params().location(lat, lng).pitch(10)
-                    .size(targetWidth, targetHeight).format();
+            return StreetView.Params.create().latitude(lat).longitude(lng).pitch(10)
+                    .width(targetWidth).height(targetHeight).format();
         }
 
         /**
@@ -1199,8 +1168,8 @@ public class Contract {
          */
         public static ContentValues[] values(long restaurantId, Place place) {
             List<Place.Review> reviews = place.getReviews();
-            return reviews != null ? values(new ContentValues[reviews.size()], restaurantId, place)
-                    : null;
+            return !reviews.isEmpty()
+                    ? values(new ContentValues[reviews.size()], restaurantId, place) : null;
         }
 
         /**
@@ -1211,8 +1180,8 @@ public class Contract {
          */
         public static ContentValues[] values(ContentValues[] vals, long restaurantId, Place place) {
             List<Place.Review> reviews = place.getReviews();
-            int size = reviews != null ? reviews.size() : 0;
-            for (int i = 0; i < vals.length; i++) {
+            int size = reviews.size();
+            for (int i = 0, length = vals.length; i < length; i++) {
                 if (i < size) {
                     if (vals[i] == null) {
                         vals[i] = new ContentValues(7);

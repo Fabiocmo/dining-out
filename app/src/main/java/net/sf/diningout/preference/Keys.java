@@ -105,11 +105,6 @@ public class Keys {
         public static final String LAST_SYNC = "last_sync";
 
         /**
-         * True if need to get missing restaurant place IDs.
-         */
-        public static final String MIGRATE_TO_PLACE_ID = "migrate_to_place_id";
-
-        /**
          * True if the navigation drawer has been opened at least once.
          */
         public static final String NAVIGATION_DRAWER_OPENED = "navigation_drawer_opened";

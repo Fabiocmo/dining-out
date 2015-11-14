@@ -79,7 +79,9 @@ public class NavigationDrawerFragment extends BaseNavigationDrawerFragment {
                 view.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        startActivity(intent);
+                        if (isAdded()) {
+                            startActivity(intent);
+                        }
                     }
                 }, layout != null ? 300L : 0L); // start Activity after drawer closes
             }
@@ -95,11 +97,14 @@ public class NavigationDrawerFragment extends BaseNavigationDrawerFragment {
             view.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    startActivity(new Intent(a, dest).addFlags(FLAG_ACTIVITY_CLEAR_TOP));
-                    if (src != RestaurantsActivity.class) {
-                        a.finish();
+                    if (isAdded()) {
+                        startActivity(new Intent(a, dest).addFlags(FLAG_ACTIVITY_CLEAR_TOP));
+                        if (src != RestaurantsActivity.class) {
+                            a.finish();
+                        }
+                        a.overridePendingTransition(android.R.anim.fade_in,
+                                android.R.anim.fade_out);
                     }
-                    a.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 }
             }, layout != null ? 300L : 0L);
         }

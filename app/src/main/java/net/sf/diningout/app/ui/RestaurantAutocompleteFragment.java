@@ -27,7 +27,6 @@ import android.widget.AdapterView;
 
 import net.sf.diningout.R;
 import net.sf.sprockets.app.ui.SprocketsFragment;
-import net.sf.sprockets.google.Place;
 import net.sf.sprockets.google.Place.Prediction;
 import net.sf.sprockets.text.TextWatcherAdapter;
 import net.sf.sprockets.view.inputmethod.InputMethods;
@@ -102,7 +101,7 @@ public class RestaurantAutocompleteFragment extends SprocketsFragment {
         /**
          * The restaurant in autocomplete suggestions was clicked.
          */
-        void onRestaurantAutocomplete(Place place);
+        void onRestaurantAutocomplete(Prediction place);
 
         /**
          * A request to search for the restaurant was made.

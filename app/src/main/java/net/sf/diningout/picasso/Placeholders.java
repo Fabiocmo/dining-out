@@ -28,6 +28,7 @@ import com.amulyakhare.textdrawable.TextDrawable.IShapeBuilder;
 
 import net.sf.diningout.R;
 import net.sf.diningout.provider.Contract.Columns;
+import net.sf.sprockets.database.Cursors;
 import net.sf.sprockets.database.EasyCursor;
 import net.sf.sprockets.graphics.drawable.Drawables;
 
@@ -57,8 +58,8 @@ public class Placeholders {
      * @return default placeholder if the cursor is null or does not have a color value
      */
     public static Drawable rect(EasyCursor c) {
-        return c != null && !c.isNull(Columns.COLOR) ? new ColorDrawable(c.getInt(Columns.COLOR))
-                : rect();
+        return c != null && Cursors.isActive(c) && !c.isNull(Columns.COLOR)
+                ? new ColorDrawable(c.getInt(Columns.COLOR)) : rect();
     }
 
     /**
@@ -66,7 +67,7 @@ public class Placeholders {
      * text.
      */
     public static Drawable rect(EasyCursor c, String text) {
-        return !TextUtils.isEmpty(text)
+        return c != null && Cursors.isActive(c) && !TextUtils.isEmpty(text)
                 ? sRect.buildRect(text.substring(0, 1), c.getInt(Columns.COLOR)) : rect(c);
     }
 
@@ -83,8 +84,8 @@ public class Placeholders {
      * @return default placeholder if the cursor is null or does not have a color value
      */
     public static Drawable round(EasyCursor c) {
-        return c != null && !c.isNull(Columns.COLOR) ? Drawables.oval(c.getInt(Columns.COLOR))
-                : round();
+        return c != null && Cursors.isActive(c) && !c.isNull(Columns.COLOR)
+                ? Drawables.oval(c.getInt(Columns.COLOR)) : round();
     }
 
     /**

@@ -43,7 +43,6 @@ import static net.sf.diningout.preference.Keys.App.APP;
 import static net.sf.diningout.preference.Keys.App.CLOUD_ID;
 import static net.sf.diningout.preference.Keys.App.INSTALL_ID;
 import static net.sf.diningout.preference.Keys.App.LAST_SYNC;
-import static net.sf.diningout.preference.Keys.App.MIGRATE_TO_PLACE_ID;
 import static net.sf.diningout.preference.Keys.App.NAVIGATION_DRAWER_OPENED;
 import static net.sf.diningout.preference.Keys.App.ONBOARDED;
 import static net.sf.diningout.preference.Keys.DISTANCE_UNIT;
@@ -63,10 +62,6 @@ public class AppApplication extends VersionedApplication {
             ga.setAppOptOut(true);
         }
         Trackers.use(this, ga.newTracker(R.xml.tracker)).set("&tid", TRACKING_ID);
-        /* start migration tasks */
-        if (Prefs.getBoolean(this, APP, MIGRATE_TO_PLACE_ID)) {
-            startService(new Intent(this, RestaurantsPlaceIdService.class));
-        }
     }
 
     @Override
@@ -91,9 +86,6 @@ public class AppApplication extends VersionedApplication {
         if (oldCode < 107) { // get colors of existing photos
             startService(new Intent(this, RestaurantColorService.class));
             startService(new Intent(this, FriendColorService.class));
-        }
-        if (oldCode < 108) {
-            Prefs.putBoolean(this, APP, MIGRATE_TO_PLACE_ID, true);
         }
         if (oldCode < 109) {
             startService(new Intent(this, RestaurantsRefreshService.class));
@@ -133,10 +125,6 @@ public class AppApplication extends VersionedApplication {
         if (def.contains(LAST_SYNC)) {
             editApp.putLong(LAST_SYNC, def.getLong(LAST_SYNC, 0L));
             editDef.remove(LAST_SYNC);
-        }
-        if (def.contains(MIGRATE_TO_PLACE_ID)) {
-            editApp.putBoolean(MIGRATE_TO_PLACE_ID, def.getBoolean(MIGRATE_TO_PLACE_ID, false));
-            editDef.remove(MIGRATE_TO_PLACE_ID);
         }
         if (def.contains(NAVIGATION_DRAWER_OPENED)) {
             editApp.putBoolean(NAVIGATION_DRAWER_OPENED,
